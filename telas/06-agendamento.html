@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<title>Curitiba Customs — Agendar serviço</title>
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+<div class="device">
+  <div class="screen">
+    <div class="topbar">
+      <a href="05-perfil-oficina.html" class="back">←</a>
+      <h1>Agendar serviço</h1>
+      <span class="spacer"></span>
+    </div>
+
+    <div class="content-x" style="margin-top: var(--space-4);">
+      <div class="card-flat" style="margin-bottom: var(--space-4);">
+        <strong>Oficina do Bairro</strong>
+        <p style="margin:2px 0 0; font-size:13px;">Água Verde · 1,2 km</p>
+      </div>
+
+      <form action="09-acompanhamento.html">
+        <div class="field">
+          <label for="carro">Veículo</label>
+          <select id="carro">
+            <option>Honda Civic 2018</option>
+            <option>Fiat Uno 2012</option>
+            <option>+ Adicionar veículo</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="servico">Tipo de serviço</label>
+          <select id="servico">
+            <option>Mecânica geral</option>
+            <option>Elétrica</option>
+            <option>Tuning / performance</option>
+            <option>Estética</option>
+            <option>Lava-car</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="data">Data</label>
+          <input type="date" id="data">
+        </div>
+
+        <div class="field">
+          <label for="hora">Horário</label>
+          <select id="hora">
+            <option>08:00</option>
+            <option>09:30</option>
+            <option>14:00</option>
+            <option>16:30</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="obs">Observações</label>
+          <textarea id="obs" rows="3" placeholder="Descreva o problema ou serviço desejado"></textarea>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="margin-top: var(--space-2);">Confirmar agendamento</button>
+      </form>
+    </div>
+  </div>
+</div>
+</body>
+</html>

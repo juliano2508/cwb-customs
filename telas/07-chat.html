@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<title>Curitiba Customs — Chat</title>
+<link rel="stylesheet" href="../css/style.css">
+<style>
+  .msg { max-width: 78%; padding: 10px 14px; border-radius: 12px; margin-bottom: 10px; font-size: 14px; line-height:1.4; }
+  .msg-in { background: var(--bg-card); border: 1px solid var(--line); align-self:flex-start; border-bottom-left-radius:2px; }
+  .msg-out { background: var(--accent); color:#17181A; align-self:flex-end; border-bottom-right-radius:2px; margin-left:auto; }
+  .chat-body { flex:1; display:flex; flex-direction:column; padding: var(--space-4); overflow-y:auto; }
+</style>
+</head>
+<body>
+<div class="device">
+  <div class="screen" style="padding-bottom: 0;">
+    <div class="topbar">
+      <a href="05-perfil-oficina.html" class="back">←</a>
+      <h1>Oficina do Bairro</h1>
+      <span class="spacer"></span>
+    </div>
+
+    <div class="chat-body">
+      <div class="msg msg-in">Olá! Recebemos sua solicitação de agendamento. Pode nos enviar fotos do problema?</div>
+      <div class="msg msg-out">Claro, o carro tá fazendo um barulho estranho na roda dianteira</div>
+      <div class="msg msg-in">Entendido. Já reservei um horário amanhã às 09:30 pra diagnóstico. Confirma?</div>
+      <div class="msg msg-out">Perfeito, confirmado 👍</div>
+    </div>
+
+    <div style="display:flex; gap: var(--space-2); padding: var(--space-3) var(--space-4); border-top: 1px solid var(--line);">
+      <input type="text" placeholder="Escreva uma mensagem..." style="flex:1; background: var(--bg-elevated); border: 1px solid var(--line); border-radius: 20px; padding: 10px 16px; color: var(--text);">
+      <button style="background: var(--accent); color:#17181A; border:none; border-radius:50%; width:40px; height:40px; font-weight:700; cursor:pointer;">➤</button>
+    </div>
+  </div>
+</div>
+</body>
+</html>

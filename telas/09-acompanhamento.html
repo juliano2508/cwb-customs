@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<title>Curitiba Customs — Acompanhamento</title>
+<link rel="stylesheet" href="../css/style.css">
+<style>
+  .timeline { position:relative; padding-left: 28px; }
+  .tl-item { position:relative; padding-bottom: 28px; }
+  .tl-item:last-child { padding-bottom: 0; }
+  .tl-item::before {
+    content:''; position:absolute; left:-28px; top:2px; width:14px; height:14px;
+    border-radius:50%; background: var(--bg-card); border: 2px solid var(--line);
+  }
+  .tl-item.done::before { background: var(--ok); border-color: var(--ok); }
+  .tl-item.current::before { background: var(--accent); border-color: var(--accent); }
+  .tl-item::after {
+    content:''; position:absolute; left:-22px; top:16px; width:2px; height:100%;
+    background: var(--line);
+  }
+  .tl-item:last-child::after { display:none; }
+</style>
+</head>
+<body>
+<div class="device">
+  <div class="screen">
+    <div class="topbar">
+      <a href="03-home-cliente.html" class="back">←</a>
+      <h1>Acompanhamento</h1>
+      <span class="spacer"></span>
+    </div>
+
+    <div class="content-x" style="margin-top: var(--space-4);">
+      <div class="card" style="margin-bottom: var(--space-5);">
+        <strong>Oficina do Bairro</strong>
+        <p style="margin:2px 0 0; font-size:13px;">Troca de óleo + revisão elétrica — Civic 2018</p>
+      </div>
+
+      <div class="timeline">
+        <div class="tl-item done">
+          <strong style="font-size:14px;">Solicitação recebida</strong>
+          <p style="margin:2px 0 0; font-size:13px;">Hoje, 08:12</p>
+        </div>
+        <div class="tl-item done">
+          <strong style="font-size:14px;">Diagnóstico concluído</strong>
+          <p style="margin:2px 0 0; font-size:13px;">Hoje, 09:05</p>
+        </div>
+        <div class="tl-item current">
+          <strong style="font-size:14px;">Em manutenção</strong>
+          <p style="margin:2px 0 0; font-size:13px;">Mecânico: Emanuel Ribeiro</p>
+        </div>
+        <div class="tl-item">
+          <strong style="font-size:14px; color: var(--text-muted);">Vistoria final</strong>
+        </div>
+        <div class="tl-item">
+          <strong style="font-size:14px; color: var(--text-muted);">Pronto para retirada</strong>
+        </div>
+      </div>
+    </div>
+
+    <div class="content-x" style="margin-top: var(--space-5);">
+      <a href="10-vistoria.html" class="btn btn-outline">Ver laudo de vistoria</a>
+    </div>
+  </div>
+
+  <nav class="tabbar">
+    <a href="03-home-cliente.html"><span class="icon">🏠</span>Início</a>
+    <a href="04-mapa-oficinas.html"><span class="icon">📍</span>Oficinas</a>
+    <a href="09-acompanhamento.html" class="active"><span class="icon">🔧</span>Serviços</a>
+    <a href="20-notificacoes.html"><span class="icon">👤</span>Perfil</a>
+  </nav>
+</div>
+</body>
+</html>

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<title>Curitiba Customs — Pedir orçamento</title>
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+<div class="device">
+  <div class="screen">
+    <div class="topbar">
+      <a href="03-home-cliente.html" class="back">←</a>
+      <h1>Pedir orçamento</h1>
+      <span class="spacer"></span>
+    </div>
+
+    <div class="content-x" style="margin-top: var(--space-4);">
+      <p style="margin-bottom: var(--space-4);">Conte o que está acontecendo com seu carro. Oficinas próximas vão te enviar propostas.</p>
+
+      <form action="21-comparar-orcamentos.html">
+        <div class="field">
+          <label for="carro">Veículo</label>
+          <select id="carro">
+            <option>Honda Civic 2018</option>
+            <option>Fiat Uno 2012</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="categoria">Categoria do problema</label>
+          <select id="categoria">
+            <option>Motor / mecânica</option>
+            <option>Elétrica</option>
+            <option>Suspensão / freios</option>
+            <option>Estética / funilaria</option>
+            <option>Tuning / performance</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="desc">Descrição do problema</label>
+          <textarea id="desc" rows="4" placeholder="Ex: barulho na roda dianteira ao frear"></textarea>
+        </div>
+
+        <div class="field">
+          <label>Fotos (opcional)</label>
+          <div style="display:flex; gap: var(--space-2);">
+            <div style="width:64px; height:64px; border:1px dashed var(--line); border-radius: var(--radius); display:flex; align-items:center; justify-content:center; color: var(--text-muted); font-size:22px;">+</div>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="margin-top: var(--space-2);">Enviar solicitação</button>
+      </form>
+    </div>
+  </div>
+</div>
+</body>
+</html>

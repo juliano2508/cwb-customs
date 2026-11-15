@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<title>Curitiba Customs — Abrir sinistro</title>
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+<div class="device">
+  <div class="screen">
+    <div class="topbar">
+      <a href="03-home-cliente.html" class="back">←</a>
+      <h1>Abrir sinistro</h1>
+      <span class="spacer"></span>
+    </div>
+
+    <div class="content-x" style="margin-top: var(--space-4);">
+      <p style="margin-bottom: var(--space-4);">Encaminhe o caso direto para o corretor do seu seguro, com o laudo da oficina já anexado.</p>
+
+      <form action="03-home-cliente.html">
+        <div class="field">
+          <label for="segur">Seguradora</label>
+          <select id="segur">
+            <option>Porto Seguro</option>
+            <option>SulAmérica</option>
+            <option>Azul Seguros</option>
+            <option>Outra</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="apolice">Número da apólice</label>
+          <input type="text" id="apolice" placeholder="Ex: 00123456">
+        </div>
+
+        <div class="field">
+          <label for="tipo">Tipo de ocorrência</label>
+          <select id="tipo">
+            <option>Colisão</option>
+            <option>Furto/roubo</option>
+            <option>Dano por terceiro</option>
+            <option>Avaria elétrica</option>
+          </select>
+        </div>
+
+        <div class="card-flat">
+          <strong style="font-size:14px;">Laudo anexado</strong>
+          <p style="margin:4px 0 0; font-size:13px;">📄 Vistoria — Oficina do Bairro, 01/09/2026</p>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="margin-top: var(--space-3);">Enviar para o corretor</button>
+      </form>
+    </div>
+  </div>
+</div>
+</body>
+</html>

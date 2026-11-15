@@ -1,0 +1,281 @@
+/* ===========================================================
+   CURITIBA CUSTOMS — Design System
+   Oficina retrô + digital: grafite, ferrugem, chapa de aço
+   =========================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  /* cores */
+  --bg: #17181A;
+  --bg-elevated: #212226;
+  --bg-card: #26272C;
+  --line: #38393E;
+  --text: #EDEAE2;
+  --text-muted: #9C9B98;
+  --accent: #C4622D;
+  --accent-hover: #D97438;
+  --accent-dim: #4A2C1B;
+  --ok: #4A7A5C;
+  --warn: #C49A2D;
+  --danger: #B2432F;
+
+  /* tipografia */
+  --font-display: 'Oswald', sans-serif;
+  --font-body: 'Inter', sans-serif;
+
+  /* espaçamento */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 16px;
+  --space-4: 24px;
+  --space-5: 32px;
+  --space-6: 48px;
+
+  --radius: 3px;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* -----------------------------------------------------------
+   Frame do "app" — simula viewport de celular no protótipo
+   ----------------------------------------------------------- */
+.device {
+  max-width: 420px;
+  min-height: 100vh;
+  margin: 0 auto;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  border-left: 1px solid var(--line);
+  border-right: 1px solid var(--line);
+}
+
+.screen {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 88px; /* espaço pra tab bar fixa */
+}
+
+/* -----------------------------------------------------------
+   Topbar
+   ----------------------------------------------------------- */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-4) var(--space-4) var(--space-3);
+  border-bottom: 1px solid var(--line);
+}
+
+.topbar h1 {
+  font-family: var(--font-display);
+  font-size: 19px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  margin: 0;
+}
+
+.topbar .back {
+  color: var(--text-muted);
+  text-decoration: none;
+  font-size: 20px;
+  width: 28px;
+}
+
+.topbar .spacer { width: 28px; }
+
+/* -----------------------------------------------------------
+   Tipografia geral
+   ----------------------------------------------------------- */
+h1, h2, h3 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  margin: 0 0 var(--space-2);
+}
+
+h2 { font-size: 22px; }
+h3 { font-size: 16px; color: var(--text-muted); font-weight: 500; }
+
+p { line-height: 1.5; color: var(--text-muted); margin: 0 0 var(--space-3); }
+
+a { color: inherit; }
+
+/* -----------------------------------------------------------
+   Cards
+   ----------------------------------------------------------- */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius);
+  padding: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.card-flat {
+  background: var(--bg-elevated);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+/* -----------------------------------------------------------
+   Botões
+   ----------------------------------------------------------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: 14px var(--space-4);
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 15px;
+  border-radius: var(--radius);
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  text-align: center;
+}
+
+.btn-primary { background: var(--accent); color: #17181A; }
+.btn-primary:hover { background: var(--accent-hover); }
+
+.btn-outline {
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--text);
+}
+
+.btn-text {
+  background: none;
+  color: var(--accent);
+  width: auto;
+  padding: var(--space-2);
+}
+
+/* -----------------------------------------------------------
+   Formulários
+   ----------------------------------------------------------- */
+.field { margin-bottom: var(--space-3); }
+
+.field label {
+  display: block;
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.field input,
+.field select,
+.field textarea {
+  width: 100%;
+  background: var(--bg-elevated);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  color: var(--text);
+  padding: 12px 14px;
+  font-family: var(--font-body);
+  font-size: 15px;
+}
+
+.field input:focus,
+.field select:focus,
+.field textarea:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* -----------------------------------------------------------
+   Badges / status
+   ----------------------------------------------------------- */
+.badge {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 20px;
+}
+
+.badge-ok { background: rgba(74,122,92,0.2); color: var(--ok); }
+.badge-warn { background: rgba(196,154,45,0.2); color: var(--warn); }
+.badge-accent { background: var(--accent-dim); color: var(--accent-hover); }
+
+/* -----------------------------------------------------------
+   Tab bar inferior (navegação principal)
+   ----------------------------------------------------------- */
+.tabbar {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  background: var(--bg-elevated);
+  border-top: 1px solid var(--line);
+  padding: 10px 0 14px;
+}
+
+.tabbar a {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  text-decoration: none;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-family: var(--font-body);
+}
+
+.tabbar a.active { color: var(--accent); }
+
+.tabbar .icon { font-size: 19px; line-height: 1; }
+
+/* -----------------------------------------------------------
+   Listas
+   ----------------------------------------------------------- */
+.list-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--line);
+  text-decoration: none;
+  color: var(--text);
+}
+
+.list-item:last-child { border-bottom: none; }
+
+.avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius);
+  background: var(--bg-elevated);
+  border: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-size: 15px;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.content-x { padding: 0 var(--space-4); }
