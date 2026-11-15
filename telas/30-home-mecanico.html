@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CWB Customs</title>
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+<div id="root"></div>
+<script src="../js/db.js"></script>
+<script src="../js/app.js"></script>
+<script>
+function desenhar(el, u) {
+  DB.load();
+  const os = DB.where('agendamentos', (a) => a.mecanicoId == u.funcionarioId && ['confirmado', 'em_andamento', 'pronto'].includes(a.status)).sort((a, b) => (a.data + a.hora).localeCompare(b.data + b.hora));
+  const feitas = DB.where('agendamentos', (a) => a.mecanicoId == u.funcionarioId && a.status === 'pago').length;
+  el.innerHTML = `<div class="grid2" style="margin-bottom:16px"><div class="card-flat stat"><div class="n">${os.length}</div><div class="l">OS em aberto</div></div><div class="card-flat stat"><div class="n">${feitas}</div><div class="l">Concluídas</div></div></div>
+    ${os.length ? os.map((a) => {
+      const v = DB.get('veiculos', a.veiculoId), vist = DB.where('vistorias', (x) => x.agendamentoId == a.id)[0];
+      const prox = a.status === 'confirmado' ? 'Iniciar serviço' : (a.status === 'em_andamento' ? (a.etapa < 3 ? 'Avançar: ' + CWB.ETAPAS[a.etapa + 1] : 'Concluir serviço') : '');
+      return `<div class="card-flat" data-id="${a.id}"><div class="row"><strong>${CWB.esc(CWB.veiculoNome(v))} · ${CWB.esc(v.placa)}</strong>${CWB.statusBadge(a.status)}</div>
+        <p style="margin:4px 0 0;font-size:14px">${CWB.esc(a.servico)}</p><p class="muted" style="margin:4px 0 0">${CWB.fmtData(a.data)} às ${a.hora}${a.status === 'em_andamento' ? ' · ' + CWB.ETAPAS[a.etapa] : ''}</p>${a.obs ? `<p style="margin:6px 0 0;font-size:13px">“${CWB.esc(a.obs)}”</p>` : ''}
+        <div class="row-sm" style="margin-top:12px">${prox ? `<button class="btn btn-primary btn-sm" data-av>${prox}</button>` : ''}<a class="btn btn-outline btn-sm" href="10-vistoria.html?id=${a.id}">${vist ? 'Editar vistoria' : 'Registrar vistoria'}</a></div></div>`;
+    }).join('') : '<div class="empty"><strong>Nenhuma ordem de serviço atribuída</strong><p>Quando a oficina atribuir um serviço, ele aparece aqui.</p></div>'}`;
+  el.querySelectorAll('[data-av]').forEach((b) => b.addEventListener('click', () => { const m = CWB.Svc.avancar(b.closest('[data-id]').dataset.id); CWB.toast(m || 'Status atualizado. Cliente notificado.', m ? 'err' : 'ok'); desenhar(el, u); }));
+}
+CWB.page({ roles: ['mecanico'], title: 'Minhas ordens de serviço', tab: 'home', back: null, render: desenhar, live: desenhar });
+</script>
+</body>
+</html>

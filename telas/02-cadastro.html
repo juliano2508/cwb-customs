@@ -2,108 +2,96 @@
 <html lang="pt-br">
 <head>
 <meta charset="UTF-8">
-<title>Curitiba Customs — Criar conta</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CWB Customs — Criar conta</title>
 <link rel="stylesheet" href="../css/style.css">
-<style>
-  .toggle-btn {
-    flex:1; padding:12px; border:none; font-weight:600;
-    font-family: var(--font-body); cursor:pointer; font-size:14px;
-    background: transparent; color: var(--text-muted);
-  }
-  .toggle-btn.active { background: var(--accent); color:#17181A; }
-  .form-panel { display:none; }
-  .form-panel.active { display:block; }
-</style>
 </head>
 <body>
-<div class="device">
-  <div class="screen" style="padding-bottom: var(--space-4);">
-    <div class="topbar">
-      <a href="01-login.html" class="back">←</a>
-      <h1>Criar conta</h1>
-      <span class="spacer"></span>
-    </div>
-
-    <div class="content-x" style="margin-top: var(--space-4);">
-
-      <div style="display:flex; border: 1px solid var(--line); border-radius: var(--radius); overflow:hidden; margin-bottom: var(--space-4);">
-        <button type="button" id="btn-cliente" class="toggle-btn active" onclick="mostrar('cliente')">Sou cliente</button>
-        <button type="button" id="btn-oficina" class="toggle-btn" onclick="mostrar('oficina')">Sou oficina</button>
-      </div>
-
-      <!-- Formulário CLIENTE -->
-      <div id="painel-cliente" class="form-panel active">
-        <form action="03-home-cliente.html">
-          <div class="field">
-            <label for="nome">Nome completo</label>
-            <input type="text" id="nome" placeholder="Seu nome">
-          </div>
-          <div class="field">
-            <label for="email">E-mail</label>
-            <input type="email" id="email" placeholder="seuemail@exemplo.com">
-          </div>
-          <div class="field">
-            <label for="tel">Telefone</label>
-            <input type="tel" id="tel" placeholder="(41) 99999-9999">
-          </div>
-          <div class="field">
-            <label for="senha">Senha</label>
-            <input type="password" id="senha" placeholder="••••••••">
-          </div>
-
-          <button type="submit" class="btn btn-primary" style="margin-top: var(--space-2);">Criar conta de cliente</button>
-        </form>
-      </div>
-
-      <!-- Formulário OFICINA -->
-      <div id="painel-oficina" class="form-panel">
-        <form action="13-home-oficina.html">
-          <div class="field">
-            <label for="nome-of">Nome da oficina</label>
-            <input type="text" id="nome-of" placeholder="Ex: Oficina do Bairro">
-          </div>
-          <div class="field">
-            <label for="cnpj">CNPJ</label>
-            <input type="text" id="cnpj" placeholder="00.000.000/0001-00">
-          </div>
-          <div class="field">
-            <label for="endereco">Endereço</label>
-            <input type="text" id="endereco" placeholder="Rua, número, bairro">
-          </div>
-          <div class="field">
-            <label for="especialidades">Especialidades</label>
-            <select id="especialidades">
-              <option>Mecânica geral</option>
-              <option>Elétrica / injeção</option>
-              <option>Estética / funilaria</option>
-              <option>Tuning / performance</option>
-              <option>Lava-car</option>
-            </select>
-          </div>
-          <div class="field">
-            <label for="email-of">E-mail comercial</label>
-            <input type="email" id="email-of" placeholder="contato@suaoficina.com">
-          </div>
-          <div class="field">
-            <label for="senha-of">Senha</label>
-            <input type="password" id="senha-of" placeholder="••••••••">
-          </div>
-
-          <button type="submit" class="btn btn-primary" style="margin-top: var(--space-2);">Criar conta de oficina</button>
-        </form>
-      </div>
-
-    </div>
-  </div>
-</div>
-
+<div id="root"></div>
+<script src="../js/db.js"></script>
+<script src="../js/app.js"></script>
 <script>
-  function mostrar(tipo) {
-    document.getElementById('btn-cliente').classList.toggle('active', tipo === 'cliente');
-    document.getElementById('btn-oficina').classList.toggle('active', tipo === 'oficina');
-    document.getElementById('painel-cliente').classList.toggle('active', tipo === 'cliente');
-    document.getElementById('painel-oficina').classList.toggle('active', tipo === 'oficina');
+CWB.publico({ title: 'Criar conta', render(el) {
+  el.style.paddingBottom = '24px';
+  el.innerHTML = `
+    <div class="topbar"><a href="01-login.html" class="back" aria-label="Voltar">←</a><h1>Criar conta</h1><span class="spacer"></span></div>
+    <div class="content-x pad">
+      <div class="toggle" role="tablist">
+        <button type="button" id="t-cliente" class="active">Sou cliente</button>
+        <button type="button" id="t-oficina">Sou oficina</button>
+      </div>
+
+      <form id="fc" novalidate>
+        <div class="field"><label for="c_nome">Nome completo</label><input id="c_nome" placeholder="Seu nome"><div class="err" id="ec_nome"></div></div>
+        <div class="field"><label for="c_email">E-mail</label><input id="c_email" type="email" placeholder="seuemail@exemplo.com"><div class="err" id="ec_email"></div></div>
+        <div class="field"><label for="c_tel">Telefone</label><input id="c_tel" type="tel" placeholder="(41) 99999-9999"><div class="err" id="ec_tel"></div></div>
+        <div class="field"><label for="c_senha">Senha (mín. 6 caracteres)</label><input id="c_senha" type="password" placeholder="••••••••"><div class="err" id="ec_senha"></div></div>
+        <button class="btn btn-primary" type="submit">Criar conta de cliente</button>
+      </form>
+
+      <form id="fo" novalidate hidden>
+        <div class="field"><label for="o_nome">Nome da oficina</label><input id="o_nome" placeholder="Ex: Oficina do Bairro"><div class="err" id="eo_nome"></div></div>
+        <div class="field"><label for="o_cnpj">CNPJ</label><input id="o_cnpj" inputmode="numeric" placeholder="00.000.000/0001-00"><div class="err" id="eo_cnpj"></div></div>
+        <div class="field"><label for="o_end">Endereço</label><input id="o_end" placeholder="Rua, número"><div class="err" id="eo_end"></div></div>
+        <div class="field"><label for="o_bairro">Bairro</label><input id="o_bairro" placeholder="Ex: Água Verde"><div class="err" id="eo_bairro"></div></div>
+        <div class="field"><label>Especialidades</label>
+          <div style="display:flex; flex-wrap:wrap">${DB.ESPECIALIDADES.map((e) => `<label class="check"><input type="checkbox" name="esp" value="${e}">${e}</label>`).join('')}</div>
+          <div class="err" id="eo_esp"></div></div>
+        <div class="field"><label for="o_email">E-mail comercial</label><input id="o_email" type="email" placeholder="contato@suaoficina.com"><div class="err" id="eo_email"></div></div>
+        <div class="field"><label for="o_senha">Senha (mín. 6 caracteres)</label><input id="o_senha" type="password" placeholder="••••••••"><div class="err" id="eo_senha"></div></div>
+        <p class="muted">Depois do cadastro, um Agente da plataforma analisa e aprova sua oficina como parceira.</p>
+        <button class="btn btn-primary" type="submit">Criar conta de oficina</button>
+      </form>
+    </div>`;
+
+  const $ = (id) => document.getElementById(id);
+  const fc = $('fc'), fo = $('fo');
+  function aba(t) {
+    $('t-cliente').classList.toggle('active', t === 'cliente');
+    $('t-oficina').classList.toggle('active', t === 'oficina');
+    fc.hidden = t !== 'cliente'; fo.hidden = t !== 'oficina';
   }
+  $('t-cliente').onclick = () => aba('cliente');
+  $('t-oficina').onclick = () => aba('oficina');
+
+  const set = (p, k, m) => { $('e' + p + '_' + k).textContent = m || ''; return !m; };
+  const emailOk = (e) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
+  const emailLivre = (e) => !DB.where('usuarios', (u) => u.email.toLowerCase() === e.toLowerCase())[0];
+
+  fc.addEventListener('submit', (ev) => {
+    ev.preventDefault(); DB.load();
+    const nome = $('c_nome').value.trim(), email = $('c_email').value.trim(), tel = $('c_tel').value.trim(), senha = $('c_senha').value;
+    let ok = true;
+    ok = set('c', 'nome', nome.length < 3 ? 'Informe seu nome completo.' : '') && ok;
+    ok = set('c', 'email', !emailOk(email) ? 'E-mail inválido.' : !emailLivre(email) ? 'Este e-mail já está cadastrado.' : '') && ok;
+    ok = set('c', 'tel', tel.replace(/\D/g, '').length < 10 ? 'Informe DDD e telefone.' : '') && ok;
+    ok = set('c', 'senha', senha.length < 6 ? 'A senha precisa ter ao menos 6 caracteres.' : '') && ok;
+    if (!ok) return;
+    const u = DB.insert('usuarios', { perfil: 'cliente', nome, email, senha, telefone: tel });
+    Auth.set(u.id);
+    location.href = Auth.home('cliente');
+  });
+
+  fo.addEventListener('submit', (ev) => {
+    ev.preventDefault(); DB.load();
+    const nome = $('o_nome').value.trim(), cnpj = $('o_cnpj').value.trim(), end = $('o_end').value.trim(), bairro = $('o_bairro').value.trim(), email = $('o_email').value.trim(), senha = $('o_senha').value;
+    const esp = [...fo.querySelectorAll('[name=esp]:checked')].map((c) => c.value);
+    let ok = true;
+    ok = set('o', 'nome', nome.length < 3 ? 'Informe o nome da oficina.' : '') && ok;
+    ok = set('o', 'cnpj', cnpj.replace(/\D/g, '').length !== 14 ? 'O CNPJ deve ter 14 dígitos.' : '') && ok;
+    ok = set('o', 'end', !end ? 'Informe o endereço.' : '') && ok;
+    ok = set('o', 'bairro', !bairro ? 'Informe o bairro.' : '') && ok;
+    ok = set('o', 'esp', !esp.length ? 'Escolha ao menos uma especialidade.' : '') && ok;
+    ok = set('o', 'email', !emailOk(email) ? 'E-mail inválido.' : !emailLivre(email) ? 'Este e-mail já está cadastrado.' : '') && ok;
+    ok = set('o', 'senha', senha.length < 6 ? 'A senha precisa ter ao menos 6 caracteres.' : '') && ok;
+    if (!ok) return;
+    const of = DB.insert('oficinas', { nome, cnpj, endereco: end, bairro, dist: +(1 + Math.random() * 5).toFixed(1), especialidades: esp, sobre: 'Nova oficina parceira.', status: 'pendente', aberta: true, horario: 'Seg a sex, 8h às 18h', notaBase: 0, qtdBase: 0 });
+    const u = DB.insert('usuarios', { perfil: 'oficina', nome, email, senha, oficinaId: of.id });
+    DB.notifyPerfil('agente', `${nome} solicitou cadastro como oficina parceira.`, '31-gestao-oficinas.html', 'parceira');
+    Auth.set(u.id);
+    location.href = Auth.home('oficina');
+  });
+}});
 </script>
 </body>
 </html>

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CWB Customs</title>
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+<div id="root"></div>
+<script src="../js/db.js"></script>
+<script src="../js/app.js"></script>
+<script>
+const ST = { ativa: ['Ativa', 'ok'], pendente: ['Pendente', 'warn'], suspensa: ['Suspensa', 'danger'] };
+function desenhar(el, u) {
+  DB.load();
+  if (document.querySelector('.overlay')) return;
+  const ofs = DB.all('oficinas').slice().sort((a, b) => (a.status === 'pendente' ? -1 : 1) - (b.status === 'pendente' ? -1 : 1));
+  const sins = DB.all('sinistros').filter((s) => s.status === 'aberto');
+  el.innerHTML = `<h3 style="margin-bottom:8px">Oficinas parceiras</h3>
+    ${ofs.map((o) => `<div class="card-flat" data-id="${o.id}"><div class="row"><strong>${CWB.esc(o.nome)}</strong>${CWB.badge(ST[o.status][0], ST[o.status][1])}</div>
+      <p style="margin:4px 0 0;font-size:13px">${CWB.esc(o.endereco)} · ${CWB.esc(o.bairro)}</p><p class="muted" style="margin:4px 0 0">CNPJ ${CWB.esc(o.cnpj)} · ${o.especialidades.map(CWB.esc).join(', ')}</p>
+      <div class="row-sm" style="margin-top:12px">${o.status !== 'ativa' ? '<button class="btn btn-primary btn-sm" data-a="ativa">' + (o.status === 'pendente' ? 'Aprovar' : 'Reativar') + '</button>' : ''}${o.status === 'pendente' ? '<button class="btn btn-danger btn-sm" data-a="rejeitar">Rejeitar</button>' : ''}${o.status === 'ativa' ? '<button class="btn btn-danger btn-sm" data-a="suspensa">Suspender</button>' : ''}</div></div>`).join('')}
+    <h3 style="margin:24px 0 8px">Sinistros em análise</h3>
+    ${sins.length ? sins.map((s) => `<div class="card-flat" data-s="${s.id}"><div class="row"><strong>${CWB.esc(DB.get('usuarios', s.clienteId).nome)}</strong>${CWB.badge('Em análise', 'warn')}</div><p style="margin:4px 0 0;font-size:13px">${CWB.esc(s.seguradora)} · apólice ${CWB.esc(s.apolice)} · ${CWB.fmtData(s.data)}</p><p class="muted" style="margin:4px 0 0">${CWB.esc(s.descricao)}</p><button class="btn btn-outline btn-sm" data-enc style="margin-top:10px">Encaminhar à seguradora</button></div>`).join('') : '<div class="empty"><strong>Nenhum sinistro pendente</strong></div>'}`;
+  el.querySelectorAll('[data-a]').forEach((b) => b.addEventListener('click', async () => {
+    const o = DB.get('oficinas', b.closest('[data-id]').dataset.id), a = b.dataset.a;
+    if (a === 'rejeitar') {
+      if (!(await CWB.confirmar(`Rejeitar o cadastro de ${o.nome}? Ele será removido.`, 'Rejeitar'))) return;
+      DB.where('usuarios', (x) => x.oficinaId == o.id).forEach((x) => DB.remove('usuarios', x.id)); DB.remove('oficinas', o.id); CWB.toast('Cadastro rejeitado.'); desenhar(el, u); return;
+    }
+    if (a === 'suspensa' && !(await CWB.confirmar(`Suspender ${o.nome}? Ela deixa de aparecer para os clientes.`, 'Suspender'))) return;
+    DB.update('oficinas', o.id, { status: a });
+    DB.notifyOficina(o.id, a === 'ativa' ? 'Sua oficina foi aprovada e já aparece para os clientes!' : 'Sua oficina foi suspensa. Entre em contato com a CWB Customs.', '13-home-oficina.html', 'parceira');
+    CWB.toast('Situação atualizada.'); desenhar(el, u);
+  }));
+  el.querySelectorAll('[data-enc]').forEach((b) => b.addEventListener('click', () => { const s = DB.get('sinistros', b.closest('[data-s]').dataset.s); DB.update('sinistros', s.id, { status: 'encaminhado' }); DB.notify(s.clienteId, 'Seu sinistro foi encaminhado à seguradora.', '19-sinistro.html', 'sinistro'); CWB.toast('Sinistro encaminhado.'); desenhar(el, u); }));
+}
+CWB.page({ roles: ['agente'], title: 'Gestão de oficinas', tab: 'home', back: null, render: desenhar, live: desenhar });
+</script>
+</body>
+</html>

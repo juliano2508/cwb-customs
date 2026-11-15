@@ -2,54 +2,31 @@
 <html lang="pt-br">
 <head>
 <meta charset="UTF-8">
-<title>Curitiba Customs — Meus veículos</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CWB Customs</title>
 <link rel="stylesheet" href="../css/style.css">
 </head>
 <body>
-<div class="device">
-  <div class="screen">
-    <div class="topbar">
-      <a href="20-notificacoes.html" class="back">←</a>
-      <h1>Meus veículos</h1>
-      <span class="spacer"></span>
-    </div>
-
-    <div class="content-x" style="margin-top: var(--space-4);">
-      <div class="list-item">
-        <div class="avatar">🚗</div>
-        <div style="flex:1;">
-          <strong style="font-size:14px;">Honda Civic 2018</strong>
-          <p style="margin:2px 0 0; font-size:13px;">Placa ABC-1D23 · Prata</p>
-        </div>
-        <span style="color: var(--text-muted); font-size:18px;">✎</span>
-      </div>
-      <div class="list-item">
-        <div class="avatar">🚗</div>
-        <div style="flex:1;">
-          <strong style="font-size:14px;">Fiat Uno 2012</strong>
-          <p style="margin:2px 0 0; font-size:13px;">Placa XYZ-9F45 · Branco</p>
-        </div>
-        <span style="color: var(--text-muted); font-size:18px;">✎</span>
-      </div>
-
-      <div class="card" style="margin-top: var(--space-5);">
-        <h3 style="margin-bottom: var(--space-3); color: var(--text);">Adicionar veículo</h3>
-        <div class="field">
-          <label for="modelo">Modelo</label>
-          <input type="text" id="modelo" placeholder="Ex: Volkswagen Gol 2015">
-        </div>
-        <div class="field">
-          <label for="placa">Placa</label>
-          <input type="text" id="placa" placeholder="ABC-1D23">
-        </div>
-        <div class="field">
-          <label for="cor">Cor</label>
-          <input type="text" id="cor" placeholder="Ex: Prata">
-        </div>
-        <button class="btn btn-primary">Salvar veículo</button>
-      </div>
-    </div>
-  </div>
-</div>
+<div id="root"></div>
+<script src="../js/db.js"></script>
+<script src="../js/app.js"></script>
+<script>
+CWB.page({ roles: ['cliente'], title: 'Meus veículos', tab: 'perfil', back: '20-perfil.html', render(el, u) {
+  const ano = new Date().getFullYear() + 1;
+  CWB.crud(el, {
+    table: 'veiculos', where: (v) => v.donoId == u.id, addTitle: 'Novo veículo', empty: 'Nenhum veículo cadastrado.',
+    item: (v) => ({ title: `${v.modelo} ${v.ano}`, sub: `${v.placa} · ${v.cor}` }),
+    fields: [
+      { key: 'modelo', label: 'Marca e modelo', required: true, placeholder: 'Ex: Honda Civic' },
+      { key: 'ano', label: 'Ano', type: 'number', required: true, min: 1950 },
+      { key: 'placa', label: 'Placa', required: true, placeholder: 'ABC-1D23', pattern: /^[A-Za-z]{3}-?\d[A-Za-z0-9]\d{2}$/, patternMsg: 'Placa inválida (ex: ABC-1D23).' },
+      { key: 'cor', label: 'Cor', required: true },
+    ],
+    defaults: () => ({ donoId: u.id }),
+    validate: (d) => (!Number.isInteger(d.ano) || d.ano < 1950 || d.ano > ano ? 'Ano inválido.' : (d.placa = d.placa.toUpperCase().replace(/^([A-Z]{3})(?!-)/, '$1-'), null)),
+    canDelete: (v) => (DB.where('agendamentos', (a) => a.veiculoId == v.id)[0] || DB.where('orcamentos', (o) => o.veiculoId == v.id)[0] ? 'Este veículo tem serviços ou orçamentos vinculados e não pode ser excluído.' : null),
+  });
+} });
+</script>
 </body>
 </html>

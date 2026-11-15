@@ -2,73 +2,65 @@
 <html lang="pt-br">
 <head>
 <meta charset="UTF-8">
-<title>Curitiba Customs — Acompanhamento</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CWB Customs — Acompanhamento</title>
 <link rel="stylesheet" href="../css/style.css">
-<style>
-  .timeline { position:relative; padding-left: 28px; }
-  .tl-item { position:relative; padding-bottom: 28px; }
-  .tl-item:last-child { padding-bottom: 0; }
-  .tl-item::before {
-    content:''; position:absolute; left:-28px; top:2px; width:14px; height:14px;
-    border-radius:50%; background: var(--bg-card); border: 2px solid var(--line);
-  }
-  .tl-item.done::before { background: var(--ok); border-color: var(--ok); }
-  .tl-item.current::before { background: var(--accent); border-color: var(--accent); }
-  .tl-item::after {
-    content:''; position:absolute; left:-22px; top:16px; width:2px; height:100%;
-    background: var(--line);
-  }
-  .tl-item:last-child::after { display:none; }
-</style>
 </head>
 <body>
-<div class="device">
-  <div class="screen">
-    <div class="topbar">
-      <a href="03-home-cliente.html" class="back">←</a>
-      <h1>Acompanhamento</h1>
-      <span class="spacer"></span>
-    </div>
-
-    <div class="content-x" style="margin-top: var(--space-4);">
-      <div class="card" style="margin-bottom: var(--space-5);">
-        <strong>Oficina do Bairro</strong>
-        <p style="margin:2px 0 0; font-size:13px;">Troca de óleo + revisão elétrica — Civic 2018</p>
-      </div>
-
-      <div class="timeline">
-        <div class="tl-item done">
-          <strong style="font-size:14px;">Solicitação recebida</strong>
-          <p style="margin:2px 0 0; font-size:13px;">Hoje, 08:12</p>
-        </div>
-        <div class="tl-item done">
-          <strong style="font-size:14px;">Diagnóstico concluído</strong>
-          <p style="margin:2px 0 0; font-size:13px;">Hoje, 09:05</p>
-        </div>
-        <div class="tl-item current">
-          <strong style="font-size:14px;">Em manutenção</strong>
-          <p style="margin:2px 0 0; font-size:13px;">Mecânico: Emanuel Ribeiro</p>
-        </div>
-        <div class="tl-item">
-          <strong style="font-size:14px; color: var(--text-muted);">Vistoria final</strong>
-        </div>
-        <div class="tl-item">
-          <strong style="font-size:14px; color: var(--text-muted);">Pronto para retirada</strong>
-        </div>
-      </div>
-    </div>
-
-    <div class="content-x" style="margin-top: var(--space-5);">
-      <a href="10-vistoria.html" class="btn btn-outline">Ver laudo de vistoria</a>
-    </div>
-  </div>
-
-  <nav class="tabbar">
-    <a href="03-home-cliente.html"><span class="icon">🏠</span>Início</a>
-    <a href="04-mapa-oficinas.html"><span class="icon">📍</span>Oficinas</a>
-    <a href="09-acompanhamento.html" class="active"><span class="icon">🔧</span>Serviços</a>
-    <a href="20-notificacoes.html"><span class="icon">👤</span>Perfil</a>
-  </nav>
-</div>
+<div id="root"></div>
+<script src="../js/db.js"></script>
+<script src="../js/app.js"></script>
+<script>
+/* Lista dos serviços do cliente; com ?id mostra o status em tempo real (atualiza sozinho quando a oficina avança). */
+function desenhar(el, u, q) {
+  DB.load();
+  if (!q.id) {
+    const ags = DB.where('agendamentos', (a) => a.clienteId == u.id).sort((a, b) => b.criadoEm - a.criadoEm);
+    el.innerHTML = ags.length ? ags.map((a) => {
+      const of = DB.get('oficinas', a.oficinaId);
+      return `<a href="09-acompanhamento.html?id=${a.id}" class="card-flat" style="display:block;text-decoration:none">
+        <div class="row" style="margin-bottom:6px"><strong>${CWB.esc(of.nome)}</strong>${CWB.statusBadge(a.status)}</div>
+        <p style="margin:0;font-size:14px">${CWB.esc(a.servico)} — ${CWB.esc(CWB.veiculoNome(DB.get('veiculos', a.veiculoId)))}</p>
+        <p class="muted" style="margin:4px 0 0">${CWB.fmtData(a.data)} às ${a.hora}</p></a>`;
+    }).join('') : '<div class="empty"><strong>Você ainda não tem serviços</strong><p>Agende um serviço para acompanhar por aqui.</p></div><a class="btn btn-primary" href="06-agendamento.html">Agendar serviço</a>';
+    return;
+  }
+  const a = DB.get('agendamentos', q.id);
+  if (!a || a.clienteId != u.id) { el.innerHTML = '<div class="empty"><strong>Serviço não encontrado</strong></div>'; return; }
+  const of = DB.get('oficinas', a.oficinaId);
+  const v = DB.get('veiculos', a.veiculoId);
+  const mec = a.mecanicoId ? DB.get('funcionarios', a.mecanicoId) : null;
+  const vist = DB.where('vistorias', (x) => x.agendamentoId == a.id)[0];
+  const fim = ['pronto', 'pago'].includes(a.status);
+  const parado = ['solicitado', 'recusado', 'cancelado'].includes(a.status);
+  const tl = CWB.ETAPAS.map((n, i) => {
+    const cls = parado ? '' : (fim || i < a.etapa) ? 'done' : i === a.etapa ? 'current' : '';
+    const sub = i === 2 && mec && !parado ? `<p class="muted" style="margin:2px 0 0">Mecânico: ${CWB.esc(mec.nome)}</p>` : '';
+    return `<div class="tl-item ${cls}"><strong style="font-size:14px;${cls ? '' : 'color:var(--text-muted)'}">${n}</strong>${sub}</div>`;
+  }).join('');
+  const avaliada = DB.where('avaliacoes', (x) => x.agendamentoId == a.id)[0];
+  el.innerHTML = `
+    <div class="card"><div class="row"><strong>${CWB.esc(of.nome)}</strong>${CWB.statusBadge(a.status)}</div>
+      <p style="margin:4px 0 0;font-size:13px">${CWB.esc(a.servico)} — ${CWB.esc(CWB.veiculoNome(v))}</p>
+      <p class="muted" style="margin:4px 0 0">${CWB.fmtData(a.data)} às ${a.hora}${a.valor ? ' · ' + CWB.money(a.valor) : ''}</p></div>
+    ${a.status === 'solicitado' ? '<div class="card-flat"><strong>Aguardando confirmação da oficina</strong><p style="margin:4px 0 0;font-size:13px">Você será avisado assim que ela responder.</p></div>' : ''}
+    ${a.status === 'recusado' ? `<div class="card-flat"><strong>A oficina não pôde atender</strong><p style="margin:4px 0 0;font-size:13px">${CWB.esc(a.motivo || 'Escolha outra data ou outra oficina.')}</p></div>` : ''}
+    <div style="margin:24px 0" class="timeline">${tl}</div>
+    <div id="acoes">
+      ${vist ? `<a class="btn btn-outline" href="10-vistoria.html?id=${a.id}">Ver laudo de vistoria</a>` : ''}
+      ${a.status === 'pronto' ? `<a class="btn btn-primary" href="11-pagamento.html?id=${a.id}">Ir para o pagamento</a>` : ''}
+      ${a.status === 'pago' ? `<a class="btn btn-outline" href="23-recibo.html?id=${a.id}">Ver recibo</a>${avaliada ? '' : `<a class="btn btn-primary" href="12-avaliacao.html?id=${a.id}">Avaliar atendimento</a>`}` : ''}
+      <a class="btn btn-outline" href="07-chat.html?o=${of.id}">💬 Falar com a oficina</a>
+      ${['solicitado', 'confirmado'].includes(a.status) ? '<button class="btn btn-danger" id="cancelar">Cancelar agendamento</button>' : ''}
+    </div>`;
+  const c = document.getElementById('cancelar');
+  if (c) c.addEventListener('click', async () => {
+    if (await CWB.confirmar('Cancelar este agendamento?', 'Cancelar agendamento')) { CWB.Svc.cancelar(a.id); CWB.toast('Agendamento cancelado.'); desenhar(el, u, q); }
+  });
+}
+CWB.page({ roles: ['cliente'], title: (u, q) => (q.id ? 'Acompanhamento' : 'Meus serviços'), tab: 'servicos',
+  back: (u, q) => (q.id ? '09-acompanhamento.html' : '03-home-cliente.html'),
+  render: desenhar, live: (el, u, q) => { if (q.id) desenhar(el, u, q); } });
+</script>
 </body>
 </html>

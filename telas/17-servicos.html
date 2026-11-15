@@ -2,69 +2,27 @@
 <html lang="pt-br">
 <head>
 <meta charset="UTF-8">
-<title>Curitiba Customs — Serviços oferecidos</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CWB Customs</title>
 <link rel="stylesheet" href="../css/style.css">
 </head>
 <body>
-<div class="device">
-  <div class="screen">
-    <div class="topbar">
-      <a href="13-home-oficina.html" class="back">←</a>
-      <h1>Serviços oferecidos</h1>
-      <span class="spacer"></span>
-    </div>
-
-    <div class="content-x" style="margin-top: var(--space-4);">
-      <div class="list-item">
-        <div style="flex:1;">
-          <strong style="font-size:14px;">Mecânica geral</strong>
-          <p style="margin:2px 0 0; font-size:13px;">A partir de R$ 90,00</p>
-        </div>
-        <span style="color: var(--text-muted); font-size:18px;">✎</span>
-      </div>
-      <div class="list-item">
-        <div style="flex:1;">
-          <strong style="font-size:14px;">Elétrica / injeção</strong>
-          <p style="margin:2px 0 0; font-size:13px;">A partir de R$ 120,00</p>
-        </div>
-        <span style="color: var(--text-muted); font-size:18px;">✎</span>
-      </div>
-      <div class="list-item">
-        <div style="flex:1;">
-          <strong style="font-size:14px;">Tuning / performance</strong>
-          <p style="margin:2px 0 0; font-size:13px;">Sob consulta</p>
-        </div>
-        <span style="color: var(--text-muted); font-size:18px;">✎</span>
-      </div>
-      <div class="list-item">
-        <div style="flex:1;">
-          <strong style="font-size:14px;">Estética / funilaria</strong>
-          <p style="margin:2px 0 0; font-size:13px;">A partir de R$ 150,00</p>
-        </div>
-        <span style="color: var(--text-muted); font-size:18px;">✎</span>
-      </div>
-      <div class="list-item">
-        <div style="flex:1;">
-          <strong style="font-size:14px;">Lava-car</strong>
-          <p style="margin:2px 0 0; font-size:13px;">A partir de R$ 40,00</p>
-        </div>
-        <span style="color: var(--text-muted); font-size:18px;">✎</span>
-      </div>
-
-      <div class="card" style="margin-top: var(--space-5);">
-        <h3 style="margin-bottom: var(--space-3); color: var(--text);">Adicionar serviço</h3>
-        <div class="field">
-          <label for="nomes">Nome do serviço</label>
-          <input type="text" id="nomes" placeholder="Ex: Alinhamento e balanceamento">
-        </div>
-        <div class="field">
-          <label for="precos">Preço base</label>
-          <input type="text" id="precos" placeholder="R$ 0,00">
-        </div>
-        <button class="btn btn-primary">Salvar</button>
-      </div>
-    </div>
-  </div>
-</div>
+<div id="root"></div>
+<script src="../js/db.js"></script>
+<script src="../js/app.js"></script>
+<script>
+CWB.page({ roles: ['oficina'], title: 'Serviços e preços', tab: 'home', back: '13-home-oficina.html', render(el, u) {
+  CWB.crud(el, {
+    table: 'servicos', where: (s) => s.oficinaId == u.oficinaId, addTitle: 'Novo serviço', empty: 'Nenhum serviço cadastrado.',
+    intro: 'Os serviços abaixo aparecem no perfil da oficina e no agendamento do cliente.',
+    item: (s) => ({ title: s.nome, sub: 'A partir de ' + CWB.money(s.preco) }),
+    fields: [
+      { key: 'nome', label: 'Nome do serviço', required: true, placeholder: 'Ex: Alinhamento e balanceamento' },
+      { key: 'preco', label: 'Preço a partir de (R$)', type: 'money', required: true },
+    ],
+    defaults: () => ({ oficinaId: u.oficinaId }),
+  });
+} });
+</script>
 </body>
 </html>

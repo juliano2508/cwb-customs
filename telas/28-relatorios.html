@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CWB Customs</title>
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+<div id="root"></div>
+<script src="../js/db.js"></script>
+<script src="../js/app.js"></script>
+<script>
+const bar = (l, v, max, txt) => `<div class="bar-row"><div class="lab"><span>${CWB.esc(l)}</span><span>${txt}</span></div><div class="bar"><div style="width:${max ? Math.max(3, v / max * 100) : 0}%;height:100%;background:var(--accent)"></div></div></div>`;
+function oficina(el, u) {
+  const ags = DB.where('agendamentos', (a) => a.oficinaId == u.oficinaId), pagos = ags.filter((a) => a.status === 'pago');
+  const rec = pagos.reduce((s, a) => s + a.valor, 0), n = DB.nota(u.oficinaId);
+  const porServ = {}; pagos.forEach((a) => { porServ[a.servico] = (porServ[a.servico] || 0) + a.valor; });
+  const sv = Object.entries(porServ).sort((a, b) => b[1] - a[1]); const mx = sv.length ? sv[0][1] : 0;
+  const st = {}; ags.forEach((a) => { st[a.status] = (st[a.status] || 0) + 1; });
+  const avs = DB.where('avaliacoes', (a) => a.oficinaId == u.oficinaId).sort((a, b) => b.criadoEm - a.criadoEm).slice(0, 5);
+  el.innerHTML = `<div class="grid2"><div class="card-flat stat"><div class="n" style="font-size:20px">${CWB.money(rec)}</div><div class="l">Receita</div></div><div class="card-flat stat"><div class="n">${pagos.length}</div><div class="l">Serviços pagos</div></div>
+    <div class="card-flat stat"><div class="n" style="font-size:20px">${CWB.money(pagos.length ? rec / pagos.length : 0)}</div><div class="l">Ticket médio</div></div><div class="card-flat stat"><div class="n">${n.nota ? n.nota.toFixed(1).replace('.', ',') : '—'}</div><div class="l">Nota (${n.qtd})</div></div></div>
+    <h3 style="margin:24px 0 8px">Receita por serviço</h3>${sv.length ? sv.map((x) => bar(x[0], x[1], mx, CWB.money(x[1]))).join('') : '<p class="muted">Sem dados.</p>'}
+    <h3 style="margin:24px 0 8px">Agendamentos por status</h3>${Object.entries(st).map((x) => bar((CWB.STATUS[x[0]] || [x[0]])[0], x[1], ags.length, x[1])).join('') || '<p class="muted">Sem dados.</p>'}
+    <h3 style="margin:24px 0 8px">Últimas avaliações</h3>${avs.length ? avs.map((a) => `<div class="card-flat"><div class="row"><strong>${CWB.esc(a.autor)}</strong><span>${CWB.stars(a.nota)}</span></div><p style="margin:4px 0 0;font-size:13px">${CWB.esc(a.comentario || 'Sem comentário.')}</p></div>`).join('') : '<p class="muted">Nenhuma avaliação.</p>'}`;
+}
+function agente(el) {
+  const ofs = DB.all('oficinas'), ags = DB.all('agendamentos'), pg = DB.all('pagamentos');
+  const rec = pg.reduce((s, p) => s + p.total, 0);
+  const por = ofs.map((o) => ({ o, v: ags.filter((a) => a.oficinaId == o.id && a.status === 'pago').reduce((s, a) => s + a.valor, 0) })).sort((a, b) => b.v - a.v);
+  el.innerHTML = `<div class="grid2"><div class="card-flat stat"><div class="n">${ofs.filter((o) => o.status === 'ativa').length}</div><div class="l">Oficinas ativas</div></div><div class="card-flat stat"><div class="n">${ofs.filter((o) => o.status === 'pendente').length}</div><div class="l">Pendentes</div></div>
+    <div class="card-flat stat"><div class="n">${ags.length}</div><div class="l">Agendamentos</div></div><div class="card-flat stat"><div class="n" style="font-size:20px">${CWB.money(rec)}</div><div class="l">Volume pago</div></div>
+    <div class="card-flat stat"><div class="n">${DB.all('usuarios').filter((x) => x.perfil === 'cliente').length}</div><div class="l">Clientes</div></div><div class="card-flat stat"><div class="n">${DB.all('sinistros').length}</div><div class="l">Sinistros</div></div></div>
+    <h3 style="margin:24px 0 8px">Volume por oficina</h3>${por.map((x) => bar(x.o.nome, x.v, por[0].v, CWB.money(x.v))).join('')}`;
+}
+CWB.page({ roles: ['oficina', 'agente'], title: 'Relatórios', tab: (u) => (u.perfil === 'oficina' ? 'home' : 'perfil'), back: (u) => Auth.home(u.perfil), render: (el, u) => (u.perfil === 'agente' ? agente(el) : oficina(el, u)) });
+</script>
+</body>
+</html>

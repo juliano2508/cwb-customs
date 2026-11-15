@@ -1,37 +1,35 @@
-# CWB Customs (Curitiba Customs)
+# CWB Customs — Protótipo (Programadores do Bairro)
 
-Protótipo não funcional de alta fidelidade, desenvolvido em HTML/CSS puro, para a plataforma de intermediação entre clientes e oficinas mecânicas **CWB Customs**.
+Plataforma que intermedia **clientes** e **oficinas** de Curitiba. Protótipo em HTML, CSS e JavaScript puro, **sem back-end**: o "banco de dados" é simulado no `localStorage` do navegador (dados de demonstração já carregados).
 
-Projeto disciplinar da PUCPR — Fundamentos de Engenharia de Software / Gestão de Projetos e Métodos Ágeis.
+## Como abrir
+Abra a pasta no VS Code, clique com o botão direito em `index.html` → **Open with Live Server**. (Ou abra `index.html` direto no navegador.)
 
-**Equipe:** Programadores do Bairro
-- Juliano Cesar Enns Miranda Marcos
-- Emmanuel Antonietti Ribeiro dos Santos
-- Enzo Wasko Amorim
-- Pedro Joslin Cavalli
-- Vinícius Paraíso Dias
+## Contas de demonstração (senha `123456`)
+| Perfil | E-mail |
+|---|---|
+| Cliente | cliente@cwb.com · bruna@cwb.com |
+| Oficina | oficina@cwb.com · oficina2@cwb.com · oficina3@cwb.com |
+| Mecânico | mecanico@cwb.com |
+| Agente | agente@cwb.com |
 
-## Como visualizar
+Para testar o "tempo real", abra duas abas (ex.: cliente e oficina) e avance o serviço na oficina: o acompanhamento do cliente atualiza sozinho.
+Para voltar aos dados iniciais: **Perfil → Restaurar dados de demonstração**.
 
-Abra `telas/00-splash.html` no navegador (ou use a extensão **Live Server** do VS Code, clicando com o botão direito no arquivo e escolhendo "Open with Live Server").
+## Telas (30 em `telas/` + `index.html`)
+| Perfil | Telas |
+|---|---|
+| Todos | 01 Login · 02 Cadastro (cliente/oficina) · 20 Perfil · 25 Notificações |
+| Cliente | 03 Início · 04 Oficinas · 05 Perfil da oficina · 06 Agendamento · 07 Chat · 08 Pedir orçamento · 21 Comparar orçamentos · 09 Acompanhamento · 10 Laudo de vistoria · 11 Pagamento · 23 Recibo · 12 Avaliação · 24 Histórico · 22 Meus veículos · 19 Sinistro |
+| Oficina | 13 Painel · 14 Agenda (confirmar/recusar/avançar) · 26 Orçamentos · 15 Funcionários · 17 Serviços · 16 Peças · 18 Compra de peças · 27 Veículos · 28 Relatórios · 07 Chat · 10 Vistoria |
+| Mecânico | 30 Minhas OS · 10 Registro de vistoria |
+| Agente | 31 Gestão de oficinas (aprovar/suspender) e sinistros · 28 Relatórios da plataforma |
 
-Todas as 28 telas estão navegáveis entre si via links HTML comuns — não há backend, banco de dados ou lógica real por trás dos formulários.
+## Navegação por perfil
+Cada tela declara quais perfis podem acessá-la; quem tenta entrar em tela de outro perfil é levado à própria home. O botão voltar (←) é definido por perfil, então a oficina nunca volta para a área do cliente.
 
 ## Estrutura
-
-```
-├── index.html          # redireciona para a tela inicial
-├── css/
-│   └── style.css       # design system (cores, tipografia, componentes)
-└── telas/
-    ├── 00-splash.html
-    ├── 01-login.html
-    ├── 02-cadastro.html
-    ├── ...
-    └── 23-comprovante-pagamento.html
-```
-
-## Fluxos principais
-
-- **Cliente:** login → cadastro → home → mapa de oficinas → perfil da oficina → agendamento → chat → orçamento → comparação de orçamentos → acompanhamento → vistoria → pagamento → comprovante → avaliação
-- **Oficina:** home/dashboard → agenda → funcionários (CRUD) → peças/estoque (CRUD) → serviços oferecidos (CRUD) → compra de peças
+- `js/db.js` — banco simulado (tabelas, dados iniciais, login)
+- `js/app.js` — layout, controle de acesso, CRUD genérico e regras de negócio
+- `js/fotos.js` — upload de fotos (vistoria, orçamento, sinistro)
+- `css/style.css` — design system (grafite + ferrugem, Oswald/Inter)

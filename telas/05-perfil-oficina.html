@@ -2,55 +2,44 @@
 <html lang="pt-br">
 <head>
 <meta charset="UTF-8">
-<title>Curitiba Customs — Oficina do Bairro</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CWB Customs — Perfil da oficina</title>
 <link rel="stylesheet" href="../css/style.css">
 </head>
 <body>
-<div class="device">
-  <div class="screen" style="padding-bottom: 24px;">
-    <div class="topbar">
-      <a href="04-mapa-oficinas.html" class="back">←</a>
-      <h1>Perfil da oficina</h1>
-      <span class="spacer"></span>
-    </div>
-
-    <div style="height:140px; background: linear-gradient(135deg, #2A2C30, #1D1E21); border-bottom: 1px solid var(--line);"></div>
-
-    <div class="content-x" style="margin-top: var(--space-4);">
-      <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom: var(--space-4);">
-        <div>
-          <h2 style="margin-bottom:2px;">Oficina do Bairro</h2>
-          <p style="margin:0; font-size:13px;">⭐ 4.8 (132 avaliações) · Água Verde</p>
-        </div>
-        <span class="badge badge-ok">Aberta agora</span>
+<div id="root"></div>
+<script src="../js/db.js"></script>
+<script src="../js/app.js"></script>
+<script>
+CWB.page({ roles: ['cliente'], title: 'Perfil da oficina', tab: 'oficinas', back: '04-mapa-oficinas.html',
+  render(el, u, q) {
+    const o = DB.get('oficinas', q.id);
+    if (!o) { el.innerHTML = '<div class="empty"><strong>Oficina não encontrada</strong><p><a href="04-mapa-oficinas.html">Voltar para a lista</a></p></div>'; return; }
+    const n = DB.nota(o.id);
+    const avs = DB.where('avaliacoes', (a) => a.oficinaId == o.id).sort((a, b) => b.criadoEm - a.criadoEm).slice(0, 3);
+    const servs = DB.where('servicos', (s) => s.oficinaId == o.id);
+    el.innerHTML = `
+      <div style="height:120px;margin:0 -24px 24px;background:linear-gradient(135deg,#2A2C30,#1D1E21);border-bottom:1px solid var(--line)"></div>
+      <div class="row" style="align-items:flex-start;margin-bottom:16px">
+        <div><h2 style="margin-bottom:2px">${CWB.esc(o.nome)}</h2>
+          <p style="margin:0;font-size:13px">${n.qtd ? `⭐ ${n.nota.toFixed(1).replace('.', ',')} (${n.qtd} avaliações) · ` : 'Sem avaliações · '}${CWB.esc(o.bairro)}</p></div>
+        ${o.aberta ? CWB.badge('Aberta agora', 'ok') : CWB.badge('Fechada', 'warn')}
       </div>
+      <div class="chips">${o.especialidades.map((e) => CWB.badge(e, 'accent')).join('')}</div>
+      <div class="card-flat"><h3 style="margin-bottom:8px">Sobre</h3><p style="margin:0">${CWB.esc(o.sobre)}</p>
+        <p class="muted" style="margin:10px 0 0">📍 ${CWB.esc(o.endereco)} · 🕒 ${CWB.esc(o.horario)}</p></div>
 
-      <div style="display:flex; gap: var(--space-2); margin-bottom: var(--space-4); flex-wrap:wrap;">
-        <span class="badge badge-accent">Mecânica geral</span>
-        <span class="badge badge-accent">Elétrica</span>
-        <span class="badge badge-accent">Tuning</span>
-      </div>
+      <h3 style="margin:24px 0 8px">Serviços e preços</h3>
+      ${servs.length ? servs.map((s) => `<div class="list-item"><span style="flex:1;font-size:14px">${CWB.esc(s.nome)}</span><span style="color:var(--accent)">a partir de ${CWB.money(s.preco)}</span></div>`).join('') : '<p class="muted">Serviços ainda não cadastrados.</p>'}
 
-      <div class="card-flat">
-        <h3 style="margin-bottom: var(--space-2);">Sobre</h3>
-        <p style="margin:0;">Oficina de bairro há 8 anos, especializada em mecânica geral e diagnóstico eletrônico. Equipe certificada, orçamento sem compromisso.</p>
-      </div>
+      <h3 style="margin:24px 0 8px">Avaliações recentes</h3>
+      ${avs.length ? avs.map((a) => `<div class="card-flat"><div class="row"><strong style="font-size:14px">${CWB.esc(a.autor)}</strong><span style="font-size:13px">${CWB.stars(a.nota)}</span></div><p style="margin:6px 0 0;font-size:13px">${CWB.esc(a.comentario || 'Sem comentário.')}</p></div>`).join('') : '<p class="muted">Ainda não há avaliações.</p>'}
 
-      <h3 style="margin: var(--space-4) 0 var(--space-2);">Avaliações recentes</h3>
-      <div class="card-flat">
-        <div style="display:flex; justify-content:space-between;">
-          <strong style="font-size:14px;">Marcos R.</strong>
-          <span style="font-size:13px;">⭐⭐⭐⭐⭐</span>
-        </div>
-        <p style="margin:6px 0 0; font-size:13px;">Rápidos e honestos no orçamento. Recomendo.</p>
-      </div>
-    </div>
-
-    <div class="content-x" style="margin-top: var(--space-3); display:flex; gap: var(--space-2);">
-      <a href="07-chat.html" class="btn btn-outline">Chat</a>
-      <a href="06-agendamento.html" class="btn btn-primary">Agendar</a>
-    </div>
-  </div>
-</div>
+      <div class="row-sm" style="margin-top:16px">
+        <a href="07-chat.html?o=${o.id}" class="btn btn-outline" style="flex:1">💬 Chat</a>
+        <a href="06-agendamento.html?o=${o.id}" class="btn btn-primary" style="flex:1">Agendar</a>
+      </div>`;
+  } });
+</script>
 </body>
 </html>

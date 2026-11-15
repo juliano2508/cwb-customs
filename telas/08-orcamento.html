@@ -2,57 +2,46 @@
 <html lang="pt-br">
 <head>
 <meta charset="UTF-8">
-<title>Curitiba Customs — Pedir orçamento</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CWB Customs — Pedir orçamento</title>
 <link rel="stylesheet" href="../css/style.css">
 </head>
 <body>
-<div class="device">
-  <div class="screen">
-    <div class="topbar">
-      <a href="03-home-cliente.html" class="back">←</a>
-      <h1>Pedir orçamento</h1>
-      <span class="spacer"></span>
-    </div>
-
-    <div class="content-x" style="margin-top: var(--space-4);">
-      <p style="margin-bottom: var(--space-4);">Conte o que está acontecendo com seu carro. Oficinas próximas vão te enviar propostas.</p>
-
-      <form action="21-comparar-orcamentos.html">
-        <div class="field">
-          <label for="carro">Veículo</label>
-          <select id="carro">
-            <option>Honda Civic 2018</option>
-            <option>Fiat Uno 2012</option>
-          </select>
-        </div>
-
-        <div class="field">
-          <label for="categoria">Categoria do problema</label>
-          <select id="categoria">
-            <option>Motor / mecânica</option>
-            <option>Elétrica</option>
-            <option>Suspensão / freios</option>
-            <option>Estética / funilaria</option>
-            <option>Tuning / performance</option>
-          </select>
-        </div>
-
-        <div class="field">
-          <label for="desc">Descrição do problema</label>
-          <textarea id="desc" rows="4" placeholder="Ex: barulho na roda dianteira ao frear"></textarea>
-        </div>
-
-        <div class="field">
-          <label>Fotos (opcional)</label>
-          <div style="display:flex; gap: var(--space-2);">
-            <div style="width:64px; height:64px; border:1px dashed var(--line); border-radius: var(--radius); display:flex; align-items:center; justify-content:center; color: var(--text-muted); font-size:22px;">+</div>
-          </div>
-        </div>
-
-        <button type="submit" class="btn btn-primary" style="margin-top: var(--space-2);">Enviar solicitação</button>
-      </form>
-    </div>
-  </div>
-</div>
+<div id="root"></div>
+<script src="../js/db.js"></script>
+<script src="../js/app.js"></script>
+<script src="../js/fotos.js"></script>
+<script>
+CWB.page({ roles: ['cliente'], title: 'Pedir orçamento', tab: 'home', back: '03-home-cliente.html',
+  render(el, u) {
+    const veics = DB.where('veiculos', (v) => v.donoId == u.id);
+    if (!veics.length) {
+      el.innerHTML = '<div class="empty"><strong>Cadastre um veículo primeiro</strong><p>O orçamento precisa saber qual carro será avaliado.</p></div><a class="btn btn-primary" href="22-meus-veiculos.html">Cadastrar veículo</a>';
+      return;
+    }
+    el.innerHTML = `
+      <p>Conte o que está acontecendo com seu carro. As oficinas parceiras vão te enviar propostas.</p>
+      <form id="f" novalidate>
+        <div class="field"><label for="vei">Veículo</label><select id="vei">${veics.map((v) => `<option value="${v.id}">${CWB.esc(CWB.veiculoNome(v))} — ${CWB.esc(v.placa)}</option>`).join('')}</select></div>
+        <div class="field"><label for="cat">Categoria do problema</label><select id="cat">
+          ${['Motor / mecânica', 'Elétrica', 'Suspensão / freios', 'Estética / funilaria', 'Tuning / performance'].map((c) => `<option>${c}</option>`).join('')}</select></div>
+        <div class="field"><label for="desc">Descrição do problema</label><textarea id="desc" rows="4" placeholder="Ex: barulho na roda dianteira ao frear"></textarea><div class="err" id="e_desc"></div></div>
+        <div class="field"><label>Fotos (opcional)</label><div id="fotos"></div></div>
+        <button class="btn btn-primary" type="submit">Enviar solicitação</button>
+      </form>`;
+    const fotos = Fotos.campo(document.getElementById('fotos'), 3);
+    document.getElementById('f').addEventListener('submit', (e) => {
+      e.preventDefault(); DB.load();
+      const desc = document.getElementById('desc').value.trim();
+      if (desc.length < 10) { document.getElementById('e_desc').textContent = 'Descreva o problema com pelo menos 10 caracteres.'; return; }
+      const cat = document.getElementById('cat').value, vid = +document.getElementById('vei').value;
+      const o = DB.insert('orcamentos', { clienteId: u.id, veiculoId: vid, categoria: cat, descricao: desc, status: 'aberto', criadoEm: Date.now(), fotos: fotos.lista() });
+      const v = DB.get('veiculos', vid);
+      DB.where('oficinas', (x) => x.status === 'ativa').forEach((of) => DB.notifyOficina(of.id, `Novo pedido de orçamento: ${cat} — ${CWB.veiculoNome(v)}.`, '26-orcamentos-oficina.html', 'orcamento'));
+      CWB.toast('Solicitação enviada às oficinas parceiras.');
+      setTimeout(() => { location.href = '21-comparar-orcamentos.html'; }, 700);
+    });
+  } });
+</script>
 </body>
 </html>

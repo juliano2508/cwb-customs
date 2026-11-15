@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CWB Customs</title>
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+<div id="root"></div>
+<script src="../js/db.js"></script>
+<script src="../js/app.js"></script>
+<script src="../js/fotos.js"></script>
+<script>
+function desenhar(el, u) {
+  DB.load();
+  if (document.querySelector('.overlay')) return;
+  const orcs = DB.all('orcamentos').filter((o) => o.status === 'aberto' || DB.where('propostas', (p) => p.orcamentoId == o.id && p.oficinaId == u.oficinaId)[0]).sort((a, b) => b.criadoEm - a.criadoEm);
+  el.innerHTML = orcs.length ? orcs.map((o) => {
+    const cli = DB.get('usuarios', o.clienteId), v = DB.get('veiculos', o.veiculoId);
+    const p = DB.where('propostas', (x) => x.orcamentoId == o.id && x.oficinaId == u.oficinaId)[0];
+    return `<div class="card"><div class="row"><strong>${CWB.esc(o.categoria)}</strong>${p ? CWB.badge('Respondido', 'ok') : CWB.badge('Novo', 'warn')}</div>
+      <p style="margin:4px 0 0;font-size:13px">${CWB.esc(cli.nome)} · ${CWB.esc(CWB.veiculoNome(v))}</p><p style="margin:6px 0 0;font-size:14px">${CWB.esc(o.descricao)}</p>${Fotos.mostrar(o.fotos)}
+      ${p ? `<p class="muted" style="margin:8px 0 0">Sua proposta: ${CWB.money(p.valor)} · ${p.prazo === 0 ? 'mesmo dia' : p.prazo + ' dia(s)'}</p>` : ''}
+      ${o.status === 'aberto' ? `<button class="btn btn-primary btn-sm" data-r="${o.id}" style="margin-top:10px">${p ? 'Editar proposta' : 'Enviar proposta'}</button>` : '<p class="muted" style="margin-top:8px">Pedido encerrado pelo cliente.</p>'}</div>`;
+  }).join('') : '<div class="empty"><strong>Nenhum pedido de orçamento</strong></div>';
+  el.querySelectorAll('[data-r]').forEach((b) => b.addEventListener('click', () => {
+    const id = b.dataset.r, ex = DB.where('propostas', (x) => x.orcamentoId == id && x.oficinaId == u.oficinaId)[0];
+    CWB.modal({ title: 'Proposta', body: `<div class="field"><label for="pv">Valor (R$)</label><input id="pv" inputmode="decimal" value="${ex ? String(ex.valor).replace('.', ',') : ''}"><div class="err" id="e1"></div></div>
+      <div class="field"><label for="pp">Prazo (dias; 0 = mesmo dia)</label><input id="pp" type="number" min="0" value="${ex ? ex.prazo : 1}"><div class="err" id="e2"></div></div>
+      <div class="field"><label for="pd">Descrição do serviço</label><textarea id="pd" rows="3">${CWB.esc(ex ? ex.descricao : '')}</textarea><div class="err" id="e3"></div></div>`,
+      actions: [{ label: 'Cancelar' }, { label: 'Enviar', cls: 'btn-primary', fn: (ov) => {
+        const val = CWB.num(ov.querySelector('#pv').value), pz = parseInt(ov.querySelector('#pp').value, 10), ds = ov.querySelector('#pd').value.trim();
+        ov.querySelector('#e1').textContent = isNaN(val) || val <= 0 ? 'Informe um valor válido.' : '';
+        ov.querySelector('#e2').textContent = isNaN(pz) || pz < 0 ? 'Prazo inválido.' : '';
+        ov.querySelector('#e3').textContent = ds ? '' : 'Descreva o serviço.';
+        if (isNaN(val) || val <= 0 || isNaN(pz) || pz < 0 || !ds) return false;
+        CWB.Svc.responderOrcamento(id, u.oficinaId, val, pz, ds); CWB.toast('Proposta enviada ao cliente.'); setTimeout(() => desenhar(el, u), 0);
+      } }] });
+  }));
+}
+CWB.page({ roles: ['oficina'], title: 'Orçamentos', tab: 'home', back: '13-home-oficina.html', render: desenhar, live: desenhar });
+</script>
+</body>
+</html>

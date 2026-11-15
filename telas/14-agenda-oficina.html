@@ -2,70 +2,60 @@
 <html lang="pt-br">
 <head>
 <meta charset="UTF-8">
-<title>Curitiba Customs — Agenda</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CWB Customs</title>
 <link rel="stylesheet" href="../css/style.css">
 </head>
 <body>
-<div class="device">
-  <div class="screen">
-    <div class="topbar">
-      <a href="13-home-oficina.html" class="back">←</a>
-      <h1>Agenda</h1>
-      <span class="spacer"></span>
-    </div>
-
-    <div class="content-x" style="margin-top: var(--space-4);">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: var(--space-4);">
-        <span style="color: var(--text-muted); font-size:18px;">‹</span>
-        <strong>Segunda, 01 de setembro</strong>
-        <span style="color: var(--text-muted); font-size:18px;">›</span>
-      </div>
-
-      <div class="list-item">
-        <div style="width:52px; font-family: var(--font-display); color: var(--accent); font-size:14px;">08:00</div>
-        <div style="flex:1;">
-          <strong style="font-size:14px;">Vago</strong>
-        </div>
-      </div>
-      <a href="09-acompanhamento.html" class="list-item" style="text-decoration:none;">
-        <div style="width:52px; font-family: var(--font-display); color: var(--accent); font-size:14px;">09:30</div>
-        <div style="flex:1;">
-          <strong style="font-size:14px;">Juliano Cesar</strong>
-          <p style="margin:2px 0 0; font-size:13px;">Troca de óleo — Civic 2018</p>
-        </div>
-        <span class="badge badge-warn">Em curso</span>
-      </a>
-      <a href="09-acompanhamento.html" class="list-item" style="text-decoration:none;">
-        <div style="width:52px; font-family: var(--font-display); color: var(--accent); font-size:14px;">11:00</div>
-        <div style="flex:1;">
-          <strong style="font-size:14px;">Pedro Cavalli</strong>
-          <p style="margin:2px 0 0; font-size:13px;">Diagnóstico elétrico</p>
-        </div>
-        <span class="badge badge-accent">Agendado</span>
-      </a>
-      <div class="list-item">
-        <div style="width:52px; font-family: var(--font-display); color: var(--accent); font-size:14px;">14:00</div>
-        <div style="flex:1;">
-          <strong style="font-size:14px;">Vago</strong>
-        </div>
-      </div>
-      <a href="09-acompanhamento.html" class="list-item" style="text-decoration:none;">
-        <div style="width:52px; font-family: var(--font-display); color: var(--accent); font-size:14px;">16:30</div>
-        <div style="flex:1;">
-          <strong style="font-size:14px;">Vinícius Dias</strong>
-          <p style="margin:2px 0 0; font-size:13px;">Tuning — escapamento</p>
-        </div>
-        <span class="badge badge-accent">Agendado</span>
-      </a>
-    </div>
-  </div>
-
-  <nav class="tabbar">
-    <a href="13-home-oficina.html"><span class="icon">🏠</span>Painel</a>
-    <a href="14-agenda-oficina.html" class="active"><span class="icon">📅</span>Agenda</a>
-    <a href="07-chat.html"><span class="icon">💬</span>Chat</a>
-    <a href="20-notificacoes.html"><span class="icon">👤</span>Perfil</a>
-  </nav>
-</div>
+<div id="root"></div>
+<script src="../js/db.js"></script>
+<script src="../js/app.js"></script>
+<script>
+let filtro = CWB.qs().filtro || 'todos';
+const FILTROS = [['todos', 'Todos'], ['solicitado', 'Novos'], ['confirmado', 'Confirmados'], ['em_andamento', 'Em andamento'], ['pronto', 'Prontos'], ['pago', 'Pagos']];
+function desenhar(el, u) {
+  DB.load();
+  if (document.querySelector('.overlay')) return; /* não redesenha com modal aberto */
+  const lista = DB.where('agendamentos', (a) => a.oficinaId == u.oficinaId && (filtro === 'todos' || a.status === filtro)).sort((a, b) => (a.data + a.hora).localeCompare(b.data + b.hora));
+  el.innerHTML = `
+    <div class="chips">${FILTROS.map((f) => `<button class="chip ${f[0] === filtro ? 'active' : ''}" data-f="${f[0]}">${f[1]}</button>`).join('')}</div>
+    ${lista.length ? lista.map((a) => {
+      const cli = DB.get('usuarios', a.clienteId), v = DB.get('veiculos', a.veiculoId), mec = a.mecanicoId ? DB.get('funcionarios', a.mecanicoId) : null;
+      const vist = DB.where('vistorias', (x) => x.agendamentoId == a.id)[0];
+      const prox = a.status === 'confirmado' ? 'Iniciar serviço' : (a.status === 'em_andamento' ? (a.etapa < 3 ? 'Avançar: ' + CWB.ETAPAS[a.etapa + 1] : 'Concluir serviço') : '');
+      return `<div class="card-flat" data-id="${a.id}">
+        <div class="row" style="margin-bottom:6px"><strong>${CWB.esc(cli.nome)}</strong>${CWB.statusBadge(a.status)}</div>
+        <p style="margin:0;font-size:14px">${CWB.esc(a.servico)} — ${CWB.esc(CWB.veiculoNome(v))}</p>
+        <p class="muted" style="margin:4px 0 0">${CWB.fmtData(a.data)} às ${a.hora}${a.valor ? ' · ' + CWB.money(a.valor) : ''}${mec ? ' · ' + CWB.esc(mec.nome) : ''}</p>
+        ${a.obs ? `<p style="margin:6px 0 0;font-size:13px">“${CWB.esc(a.obs)}”</p>` : ''}
+        <div class="row-sm" style="margin-top:12px">
+          ${a.status === 'solicitado' ? '<button class="btn btn-primary btn-sm" data-ac="conf">Confirmar</button><button class="btn btn-danger btn-sm" data-ac="rec">Recusar</button>' : ''}
+          ${prox ? `<button class="btn btn-primary btn-sm" data-ac="av">${prox}</button>` : ''}
+          ${['em_andamento', 'pronto'].includes(a.status) || vist ? `<a class="btn btn-outline btn-sm" href="10-vistoria.html?id=${a.id}">${vist ? 'Vistoria' : 'Registrar vistoria'}</a>` : ''}
+          ${a.status === 'pago' ? `<a class="btn btn-outline btn-sm" href="23-recibo.html?id=${a.id}">Recibo</a>` : ''}
+          <a class="btn btn-outline btn-sm" href="07-chat.html?c=${a.clienteId}">💬 Chat</a>
+        </div></div>`;
+    }).join('') : '<div class="empty"><strong>Nenhum agendamento neste filtro</strong></div>'}`;
+  el.querySelectorAll('[data-f]').forEach((b) => b.addEventListener('click', () => { filtro = b.dataset.f; desenhar(el, u); }));
+  el.querySelectorAll('[data-ac]').forEach((b) => b.addEventListener('click', () => {
+    const id = b.closest('[data-id]').dataset.id, a = DB.get('agendamentos', id);
+    if (b.dataset.ac === 'av') { const m = CWB.Svc.avancar(id); if (m) CWB.toast(m, 'err'); else CWB.toast('Status atualizado. Cliente notificado.'); desenhar(el, u); return; }
+    if (b.dataset.ac === 'rec') {
+      CWB.modal({ title: 'Recusar agendamento', body: '<div class="field"><label for="mot">Motivo (opcional)</label><textarea id="mot" rows="3"></textarea></div>', actions: [{ label: 'Voltar' }, { label: 'Recusar', cls: 'btn-danger', fn: (ov) => { CWB.Svc.recusar(id, ov.querySelector('#mot').value.trim()); CWB.toast('Agendamento recusado.'); setTimeout(() => desenhar(el, u), 0); } }] });
+      return;
+    }
+    const mecs = DB.where('funcionarios', (f) => f.oficinaId == u.oficinaId);
+    CWB.modal({ title: 'Confirmar agendamento', body: `<div class="field"><label for="val">Valor estimado (R$)</label><input id="val" inputmode="decimal" value="${a.valor || ''}" placeholder="0,00"><div class="err" id="ev"></div></div>
+      <div class="field"><label for="mec">Mecânico responsável</label><select id="mec"><option value="">Definir depois</option>${mecs.map((m) => `<option value="${m.id}">${CWB.esc(m.nome)}</option>`).join('')}</select></div>`,
+      actions: [{ label: 'Voltar' }, { label: 'Confirmar', cls: 'btn-primary', fn: (ov) => {
+        const v = CWB.num(ov.querySelector('#val').value);
+        if (isNaN(v) || v <= 0) { ov.querySelector('#ev').textContent = 'Informe o valor estimado.'; return false; }
+        CWB.Svc.confirmar(id, v, ov.querySelector('#mec').value ? +ov.querySelector('#mec').value : null);
+        CWB.toast('Agendamento confirmado. Cliente notificado.'); setTimeout(() => desenhar(el, u), 0);
+      } }] });
+  }));
+}
+CWB.page({ roles: ['oficina'], title: 'Agenda', tab: 'agenda', back: '13-home-oficina.html', render: desenhar, live: desenhar });
+</script>
 </body>
 </html>

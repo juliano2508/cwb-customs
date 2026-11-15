@@ -2,75 +2,51 @@
 <html lang="pt-br">
 <head>
 <meta charset="UTF-8">
-<title>Curitiba Customs — Painel da oficina</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CWB Customs</title>
 <link rel="stylesheet" href="../css/style.css">
 </head>
 <body>
-<div class="device">
-  <div class="screen">
-    <div class="topbar">
-      <span class="spacer"></span>
-      <h1>Oficina do Bairro</h1>
-      <a href="20-notificacoes.html" class="back" style="text-align:right;">🔔</a>
+<div id="root"></div>
+<script src="../js/db.js"></script>
+<script src="../js/app.js"></script>
+<script>
+function desenhar(el, u) {
+  DB.load();
+  const of = DB.get('oficinas', u.oficinaId);
+  const ags = DB.where('agendamentos', (a) => a.oficinaId == of.id);
+  const hoje = DB.iso(new Date());
+  const pend = ags.filter((a) => a.status === 'solicitado');
+  const hojeN = ags.filter((a) => a.data === hoje && !['recusado', 'cancelado'].includes(a.status)).length;
+  const and = ags.filter((a) => a.status === 'em_andamento').length;
+  const orcAbertos = DB.where('orcamentos', (o) => o.status === 'aberto' && !DB.where('propostas', (p) => p.orcamentoId == o.id && p.oficinaId == of.id)[0]).length;
+  const n = DB.nota(of.id);
+  const baixo = DB.where('pecas', (p) => p.oficinaId == of.id && p.qtd <= 3).length;
+  const T = (h, i, t, extra) => `<a class="card-flat tile" href="${h}"><div class="ic">${i}</div><div class="tx">${t}</div>${extra || ''}</a>`;
+  el.innerHTML = `
+    <div class="row" style="margin-bottom:4px"><h2>${CWB.esc(of.nome)}</h2>${of.aberta ? CWB.badge('Aberta', 'ok') : CWB.badge('Fechada', 'danger')}</div>
+    <p class="muted">${CWB.esc(of.endereco)} · ${CWB.esc(of.bairro)}</p>
+    ${of.status !== 'ativa' ? `<div class="card-flat"><strong>${of.status === 'pendente' ? 'Cadastro em análise' : 'Oficina suspensa'}</strong><p style="margin:4px 0 0;font-size:13px">${of.status === 'pendente' ? 'Um agente da CWB Customs está validando seus dados. Você aparecerá aos clientes após a aprovação.' : 'Entre em contato com a CWB Customs.'}</p></div>` : ''}
+    <div class="grid2" style="margin:16px 0">
+      <div class="card-flat stat"><div class="n">${pend.length}</div><div class="l">Aguardando resposta</div></div>
+      <div class="card-flat stat"><div class="n">${hojeN}</div><div class="l">Serviços hoje</div></div>
+      <div class="card-flat stat"><div class="n">${and}</div><div class="l">Em andamento</div></div>
+      <div class="card-flat stat"><div class="n">${n.nota ? n.nota.toFixed(1).replace('.', ',') : '—'}</div><div class="l">Nota (${n.qtd} aval.)</div></div>
     </div>
-
-    <div class="content-x" style="margin-top: var(--space-4);">
-
-      <div style="display:grid; grid-template-columns: 1fr 1fr; gap: var(--space-3); margin-bottom: var(--space-5);">
-        <div class="card-flat" style="text-align:center;">
-          <div style="font-family: var(--font-display); font-size:26px; color: var(--accent);">6</div>
-          <div style="font-size:12px; color: var(--text-muted);">agendados hoje</div>
-        </div>
-        <div class="card-flat" style="text-align:center;">
-          <div style="font-family: var(--font-display); font-size:26px; color: var(--ok);">3</div>
-          <div style="font-size:12px; color: var(--text-muted);">em andamento</div>
-        </div>
-      </div>
-
-      <h3 style="margin-bottom: var(--space-3);">Próximos atendimentos</h3>
-      <a href="09-acompanhamento.html" class="list-item" style="text-decoration:none;">
-        <div class="avatar">JC</div>
-        <div style="flex:1;">
-          <strong style="font-size:14px;">Juliano Cesar</strong>
-          <p style="margin:2px 0 0; font-size:13px;">09:30 · Troca de óleo · Civic 2018</p>
-        </div>
-      </a>
-      <a href="09-acompanhamento.html" class="list-item" style="text-decoration:none;">
-        <div class="avatar">PC</div>
-        <div style="flex:1;">
-          <strong style="font-size:14px;">Pedro Cavalli</strong>
-          <p style="margin:2px 0 0; font-size:13px;">11:00 · Diagnóstico elétrico</p>
-        </div>
-      </a>
-
-      <h3 style="margin: var(--space-5) 0 var(--space-3);">Gestão</h3>
-      <div style="display:grid; grid-template-columns: 1fr 1fr; gap: var(--space-3);">
-        <a href="15-funcionarios.html" class="card-flat" style="text-decoration:none; text-align:center; padding: var(--space-4) var(--space-2);">
-          <div style="font-size:22px; margin-bottom:6px;">🧑‍🔧</div>
-          <div style="font-size:13px;">Funcionários</div>
-        </a>
-        <a href="16-pecas.html" class="card-flat" style="text-decoration:none; text-align:center; padding: var(--space-4) var(--space-2);">
-          <div style="font-size:22px; margin-bottom:6px;">🔩</div>
-          <div style="font-size:13px;">Peças</div>
-        </a>
-        <a href="17-servicos.html" class="card-flat" style="text-decoration:none; text-align:center; padding: var(--space-4) var(--space-2);">
-          <div style="font-size:22px; margin-bottom:6px;">🛠️</div>
-          <div style="font-size:13px;">Serviços</div>
-        </a>
-        <a href="14-agenda-oficina.html" class="card-flat" style="text-decoration:none; text-align:center; padding: var(--space-4) var(--space-2);">
-          <div style="font-size:22px; margin-bottom:6px;">📅</div>
-          <div style="font-size:13px;">Agenda</div>
-        </a>
-      </div>
-    </div>
-  </div>
-
-  <nav class="tabbar">
-    <a href="13-home-oficina.html" class="active"><span class="icon">🏠</span>Painel</a>
-    <a href="14-agenda-oficina.html"><span class="icon">📅</span>Agenda</a>
-    <a href="07-chat.html"><span class="icon">💬</span>Chat</a>
-    <a href="20-notificacoes.html"><span class="icon">👤</span>Perfil</a>
-  </nav>
-</div>
+    ${pend.length ? `<h3 style="margin-bottom:8px">Solicitações novas</h3>${pend.slice(0, 3).map((a) => `<a class="card-flat" style="display:block;text-decoration:none" href="14-agenda-oficina.html?filtro=solicitado"><div class="row"><strong>${CWB.esc(DB.get('usuarios', a.clienteId).nome)}</strong>${CWB.statusBadge(a.status)}</div><p style="margin:4px 0 0;font-size:13px">${CWB.esc(a.servico)} · ${CWB.fmtData(a.data)} às ${a.hora}</p></a>`).join('')}` : '<div class="empty"><strong>Nenhuma solicitação pendente</strong></div>'}
+    <h3 style="margin:24px 0 8px">Gerenciar</h3>
+    <div class="grid2">
+      ${T('14-agenda-oficina.html', '📅', 'Agenda')}
+      ${T('26-orcamentos-oficina.html', '📝', 'Orçamentos', orcAbertos ? `<div>${CWB.badge(orcAbertos + ' novo(s)', 'warn')}</div>` : '')}
+      ${T('15-funcionarios.html', '👷', 'Funcionários')}
+      ${T('17-servicos.html', '🛠', 'Serviços e preços')}
+      ${T('16-pecas.html', '⚙️', 'Estoque de peças', baixo ? `<div>${CWB.badge(baixo + ' baixo(s)', 'danger')}</div>` : '')}
+      ${T('18-compra-pecas.html', '🛒', 'Comprar peças')}
+      ${T('27-veiculos-oficina.html', '🚗', 'Veículos atendidos')}
+      ${T('28-relatorios.html', '📊', 'Relatórios')}
+    </div>`;
+}
+CWB.page({ roles: ['oficina'], title: 'Painel da oficina', tab: 'home', back: null, render: desenhar, live: desenhar });
+</script>
 </body>
 </html>

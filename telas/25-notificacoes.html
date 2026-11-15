@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CWB Customs</title>
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+<div id="root"></div>
+<script src="../js/db.js"></script>
+<script src="../js/app.js"></script>
+<script>
+const ICO = { agendamento: '📅', acompanhamento: '🔧', conclusao: '✅', orcamento: '📝', vistoria: '📋', pagamento: '💳', avaliacao: '⭐', os: '🛠', parceira: '🏢', sinistro: '🛡', mensagem: '💬', info: '🔔' };
+function desenhar(el, u) {
+  DB.load();
+  const ns = DB.where('notificacoes', (n) => n.userId == u.id).sort((a, b) => b.ts - a.ts);
+  const nl = ns.filter((n) => !n.lida).length;
+  el.innerHTML = `${nl ? '<button class="btn btn-outline btn-sm" id="todas" style="margin-bottom:12px">Marcar todas como lidas</button>' : ''}
+    ${ns.length ? ns.map((n) => `<a class="list-item" href="${n.link ? CWB.esc(n.link) : '#'}" data-id="${n.id}" style="text-decoration:none;${n.lida ? 'opacity:.6' : ''}"><span style="font-size:20px">${ICO[n.tipo] || '🔔'}</span><div style="flex:1"><p style="margin:0;font-size:14px;color:var(--text)">${CWB.esc(n.texto)}</p><p class="muted" style="margin:2px 0 0">${CWB.fmtTs(n.ts)}</p></div>${n.lida ? '' : '<span class="dot" style="position:static">•</span>'}</a>`).join('') : '<div class="empty"><strong>Sem notificações</strong></div>'}`;
+  el.querySelectorAll('[data-id]').forEach((a) => a.addEventListener('click', (e) => { DB.update('notificacoes', a.dataset.id, { lida: true }); if (!a.getAttribute('href') || a.getAttribute('href') === '#') { e.preventDefault(); desenhar(el, u); } }));
+  const t = document.getElementById('todas');
+  if (t) t.addEventListener('click', () => { DB.where('notificacoes', (n) => n.userId == u.id).forEach((n) => DB.update('notificacoes', n.id, { lida: true })); desenhar(el, u); });
+}
+CWB.page({ title: 'Notificações', bell: false, tab: 'notif', back: (u) => Auth.home(u.perfil), render: desenhar, live: desenhar });
+</script>
+</body>
+</html>

@@ -2,44 +2,61 @@
 <html lang="pt-br">
 <head>
 <meta charset="UTF-8">
-<title>Curitiba Customs — Entrar</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CWB Customs — Entrar</title>
 <link rel="stylesheet" href="../css/style.css">
 </head>
 <body>
-<div class="device">
-  <div class="screen" style="padding-bottom: 0; justify-content: center;">
-    <div class="content-x" style="text-align:center; margin-bottom: var(--space-6);">
-      <div style="font-family: var(--font-display); font-size: 30px; font-weight: 700; letter-spacing: 0.5px;">
-        CURITIBA <span style="color: var(--accent);">CUSTOMS</span>
-      </div>
+<div id="root"></div>
+<script src="../js/db.js"></script>
+<script src="../js/app.js"></script>
+<script>
+CWB.publico({ title: 'Entrar', render(el) {
+  const atual = Auth.user();
+  el.style.justifyContent = 'center';
+  el.style.paddingBottom = '24px';
+  el.innerHTML = `
+    <div class="content-x" style="text-align:center; margin-bottom: 32px;">
+      <div style="font-family: var(--font-display); font-size: 30px; font-weight: 700;">CWB <span style="color: var(--accent);">CUSTOMS</span></div>
       <p style="margin-top: 4px; font-size: 13px;">a oficina do seu bairro, sem enrolação</p>
     </div>
-
     <div class="content-x">
-      <form action="03-home-cliente.html">
-        <div class="field">
-          <label for="email">E-mail</label>
-          <input type="email" id="email" placeholder="seuemail@exemplo.com">
-        </div>
-        <div class="field">
-          <label for="senha">Senha</label>
-          <input type="password" id="senha" placeholder="••••••••">
-        </div>
-
-        <div style="text-align:right; margin-bottom: var(--space-4);">
-          <a href="#" style="font-size: 13px; color: var(--text-muted); text-decoration:none;">Esqueci minha senha</a>
-        </div>
-
+      ${atual ? `<div class="card-flat row"><span class="muted">Sessão ativa: <strong>${CWB.esc(atual.nome)}</strong></span><a class="btn btn-outline btn-sm" href="${Auth.home(atual.perfil)}">Continuar</a></div>` : ''}
+      <form id="f" novalidate>
+        <div class="field"><label for="email">E-mail</label><input type="email" id="email" placeholder="seuemail@exemplo.com" autocomplete="username"></div>
+        <div class="field"><label for="senha">Senha</label><input type="password" id="senha" placeholder="••••••••" autocomplete="current-password"></div>
+        <div id="erro" class="err" role="alert" style="margin-bottom:12px"></div>
+        <div style="text-align:right; margin-bottom: 16px;"><a href="#" id="esqueci" style="font-size:13px; color: var(--text-muted); text-decoration:none;">Esqueci minha senha</a></div>
         <button type="submit" class="btn btn-primary">Entrar</button>
       </form>
-
-      <div style="text-align:center; margin: var(--space-4) 0; color: var(--text-muted); font-size: 13px;">
-        ou
-      </div>
-
+      <div class="muted" style="text-align:center; margin: 20px 0 12px;">ou</div>
       <a href="02-cadastro.html" class="btn btn-outline">Criar conta</a>
-    </div>
-  </div>
-</div>
+
+      <div class="card-flat" style="margin-top: 24px;">
+        <h3 style="margin-bottom:10px">Acesso rápido (demonstração)</h3>
+        <div class="row-sm">
+          <button class="chip" data-e="cliente@cwb.com">Cliente</button>
+          <button class="chip" data-e="oficina@cwb.com">Oficina</button>
+          <button class="chip" data-e="mecanico@cwb.com">Mecânico</button>
+          <button class="chip" data-e="agente@cwb.com">Agente</button>
+        </div>
+        <p class="muted" style="margin:10px 0 0">Todas as contas de teste usam a senha <strong>123456</strong>.</p>
+      </div>
+    </div>`;
+  const entrar = (email, senha) => {
+    const u = Auth.login(email, senha);
+    if (!u) { document.getElementById('erro').textContent = 'E-mail ou senha incorretos.'; return; }
+    location.href = Auth.home(u.perfil);
+  };
+  document.getElementById('f').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const em = document.getElementById('email').value, se = document.getElementById('senha').value;
+    if (!em || !se) { document.getElementById('erro').textContent = 'Informe e-mail e senha.'; return; }
+    entrar(em, se);
+  });
+  el.querySelectorAll('[data-e]').forEach((b) => b.addEventListener('click', () => entrar(b.dataset.e, '123456')));
+  document.getElementById('esqueci').addEventListener('click', (e) => { e.preventDefault(); CWB.toast('Simulação: enviamos um link de redefinição para o seu e-mail.'); });
+}});
+</script>
 </body>
 </html>

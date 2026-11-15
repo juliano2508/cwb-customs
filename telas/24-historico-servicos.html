@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CWB Customs</title>
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+<div id="root"></div>
+<script src="../js/db.js"></script>
+<script src="../js/app.js"></script>
+<script>
+CWB.page({ roles: ['cliente', 'oficina'], title: 'Histórico de serviços', tab: (u) => (u.perfil === 'cliente' ? 'servicos' : 'agenda'),
+  back: (u) => (u.perfil === 'cliente' ? '20-perfil.html' : '13-home-oficina.html'),
+  render(el, u) {
+    const meus = (a) => (u.perfil === 'cliente' ? a.clienteId == u.id : a.oficinaId == u.oficinaId);
+    const ags = DB.where('agendamentos', (a) => meus(a) && ['pago', 'recusado', 'cancelado'].includes(a.status)).sort((a, b) => b.data.localeCompare(a.data));
+    const pagos = ags.filter((a) => a.status === 'pago');
+    const total = pagos.reduce((s, a) => s + a.valor, 0);
+    el.innerHTML = `<div class="grid2" style="margin-bottom:16px"><div class="card-flat stat"><div class="n">${pagos.length}</div><div class="l">Serviços concluídos</div></div><div class="card-flat stat"><div class="n" style="font-size:20px">${CWB.money(total)}</div><div class="l">${u.perfil === 'cliente' ? 'Total gasto' : 'Total recebido'}</div></div></div>
+      ${ags.length ? ags.map((a) => {
+        const outro = u.perfil === 'cliente' ? DB.get('oficinas', a.oficinaId).nome : DB.get('usuarios', a.clienteId).nome;
+        const av = DB.where('avaliacoes', (x) => x.agendamentoId == a.id)[0];
+        return `<div class="card-flat"><div class="row"><strong>${CWB.esc(outro)}</strong>${CWB.statusBadge(a.status)}</div>
+          <p style="margin:4px 0 0;font-size:14px">${CWB.esc(a.servico)} — ${CWB.esc(CWB.veiculoNome(DB.get('veiculos', a.veiculoId)))}</p>
+          <p class="muted" style="margin:4px 0 0">${CWB.fmtData(a.data)}${a.status === 'pago' ? ' · ' + CWB.money(a.valor) : ''}${av ? ' · ' + CWB.stars(av.nota) : ''}</p>
+          ${a.status === 'pago' ? `<div class="row-sm" style="margin-top:10px"><a class="btn btn-outline btn-sm" href="23-recibo.html?id=${a.id}">Recibo</a>${DB.where('vistorias', (v) => v.agendamentoId == a.id)[0] ? `<a class="btn btn-outline btn-sm" href="10-vistoria.html?id=${a.id}">Laudo</a>` : ''}${u.perfil === 'cliente' && !av ? `<a class="btn btn-primary btn-sm" href="12-avaliacao.html?id=${a.id}">Avaliar</a>` : ''}</div>` : ''}</div>`;
+      }).join('') : '<div class="empty"><strong>Nenhum serviço finalizado ainda</strong></div>'}`;
+  } });
+</script>
+</body>
+</html>

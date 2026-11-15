@@ -2,54 +2,57 @@
 <html lang="pt-br">
 <head>
 <meta charset="UTF-8">
-<title>Curitiba Customs — Comprar peças</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CWB Customs</title>
 <link rel="stylesheet" href="../css/style.css">
 </head>
 <body>
-<div class="device">
-  <div class="screen">
-    <div class="topbar">
-      <a href="16-pecas.html" class="back">←</a>
-      <h1>Fornecedores</h1>
-      <span class="spacer"></span>
-    </div>
-
-    <div class="content-x" style="margin-top: var(--space-4);">
-      <div class="field" style="margin-bottom: var(--space-4);">
-        <input type="text" placeholder="Buscar peça ou fornecedor...">
-      </div>
-
-      <div class="card-flat">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-          <div>
-            <strong style="font-size:14px;">Pastilha de freio dianteira</strong>
-            <p style="margin:2px 0 0; font-size:13px;">AutoPeças Curitiba · entrega em 2 dias</p>
-          </div>
-          <span style="color: var(--accent); font-weight:700;">R$ 78,00</span>
-        </div>
-      </div>
-      <div class="card-flat">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-          <div>
-            <strong style="font-size:14px;">Vela de ignição (kit 4un)</strong>
-            <p style="margin:2px 0 0; font-size:13px;">Distribuidora PR · entrega em 1 dia</p>
-          </div>
-          <span style="color: var(--accent); font-weight:700;">R$ 76,00</span>
-        </div>
-      </div>
-      <div class="card-flat">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-          <div>
-            <strong style="font-size:14px;">Amortecedor dianteiro</strong>
-            <p style="margin:2px 0 0; font-size:13px;">AutoPeças Curitiba · entrega em 3 dias</p>
-          </div>
-          <span style="color: var(--accent); font-weight:700;">R$ 195,00</span>
-        </div>
-      </div>
-
-      <button class="btn btn-primary" style="margin-top: var(--space-3);">Adicionar ao carrinho</button>
-    </div>
-  </div>
-</div>
+<div id="root"></div>
+<script src="../js/db.js"></script>
+<script src="../js/app.js"></script>
+<script>
+let carrinho = {}; /* chave "fornId:idx" -> qtd */
+function desenhar(el, u) {
+  DB.load();
+  if (document.querySelector('.overlay')) return;
+  const forn = DB.all('fornecedores');
+  const itensCar = Object.keys(carrinho).filter((k) => carrinho[k] > 0).map((k) => { const [f, i] = k.split(':'); const fo = DB.get('fornecedores', f); return { fo, it: fo.itens[i], qtd: carrinho[k] }; });
+  const total = itensCar.reduce((s, x) => s + x.it.preco * x.qtd, 0);
+  const pedidos = DB.where('pedidos', (p) => p.oficinaId == u.oficinaId).sort((a, b) => b.criadoEm - a.criadoEm);
+  el.innerHTML = `
+    ${forn.map((f) => `<h3 style="margin:8px 0">${CWB.esc(f.nome)} <span class="muted" style="font-size:12px;text-transform:none">· entrega em ${CWB.esc(f.prazo)}</span></h3>
+      ${f.itens.map((it, i) => `<div class="list-item"><div style="flex:1"><strong style="font-size:14px">${CWB.esc(it.peca)}</strong><p style="margin:2px 0 0;font-size:13px">${CWB.esc(it.codigo)} · ${CWB.money(it.preco)}/un</p></div>
+        <div class="row-sm" style="flex-wrap:nowrap;align-items:center"><button class="icon-btn" data-m="${f.id}:${i}" aria-label="Diminuir">−</button><span style="min-width:20px;text-align:center" aria-live="polite">${carrinho[f.id + ':' + i] || 0}</span><button class="icon-btn" data-p="${f.id}:${i}" aria-label="Aumentar">＋</button></div></div>`).join('')}`).join('')}
+    <div class="card" style="margin-top:16px"><div class="row"><strong>Pedido atual</strong><strong style="color:var(--accent)">${CWB.money(total)}</strong></div>
+      <p class="muted" style="margin:6px 0 12px">${itensCar.length ? itensCar.map((x) => x.qtd + '× ' + CWB.esc(x.it.peca)).join(', ') : 'Nenhum item selecionado.'}</p>
+      <button class="btn btn-primary" id="fin" ${itensCar.length ? '' : 'disabled'}>Finalizar pedido</button></div>
+    <h3 style="margin:24px 0 8px">Meus pedidos</h3>
+    ${pedidos.length ? pedidos.map((p) => `<div class="card-flat"><div class="row"><strong>Pedido #${p.id}</strong>${p.status === 'recebido' ? CWB.badge('Recebido', 'ok') : CWB.badge('A caminho', 'warn')}</div>
+      <p style="margin:4px 0 0;font-size:13px">${CWB.esc(p.fornecedor)} · ${CWB.money(p.total)} · ${CWB.fmtTs(p.criadoEm)}</p>
+      <p class="muted" style="margin:4px 0 0">${p.itens.map((i) => i.qtd + '× ' + CWB.esc(i.peca)).join(', ')}</p>
+      ${p.status !== 'recebido' ? `<button class="btn btn-outline btn-sm" data-rec="${p.id}" style="margin-top:10px">Marcar como recebido</button>` : ''}</div>`).join('') : '<div class="empty"><strong>Nenhum pedido ainda</strong></div>'}`;
+  el.querySelectorAll('[data-p]').forEach((b) => b.addEventListener('click', () => { carrinho[b.dataset.p] = (carrinho[b.dataset.p] || 0) + 1; desenhar(el, u); }));
+  el.querySelectorAll('[data-m]').forEach((b) => b.addEventListener('click', () => { carrinho[b.dataset.m] = Math.max(0, (carrinho[b.dataset.m] || 0) - 1); desenhar(el, u); }));
+  const fin = document.getElementById('fin');
+  if (fin) fin.addEventListener('click', () => {
+    /* um pedido por fornecedor */
+    const grupos = {};
+    itensCar.forEach((x) => { (grupos[x.fo.id] = grupos[x.fo.id] || { fo: x.fo, itens: [] }).itens.push({ peca: x.it.peca, codigo: x.it.codigo, preco: x.it.preco, qtd: x.qtd }); });
+    Object.values(grupos).forEach((g) => DB.insert('pedidos', { oficinaId: u.oficinaId, fornecedorId: g.fo.id, fornecedor: g.fo.nome, itens: g.itens, total: g.itens.reduce((s, i) => s + i.preco * i.qtd, 0), status: 'enviado', criadoEm: Date.now() }));
+    carrinho = {}; CWB.toast('Pedido enviado ao fornecedor.'); desenhar(el, u);
+  });
+  el.querySelectorAll('[data-rec]').forEach((b) => b.addEventListener('click', () => {
+    const p = DB.get('pedidos', b.dataset.rec);
+    p.itens.forEach((i) => {
+      const ex = DB.where('pecas', (x) => x.oficinaId == u.oficinaId && x.codigo === i.codigo)[0];
+      if (ex) DB.update('pecas', ex.id, { qtd: ex.qtd + i.qtd });
+      else DB.insert('pecas', { oficinaId: u.oficinaId, nome: i.peca, codigo: i.codigo, qtd: i.qtd, preco: Math.round(i.preco * 1.4) });
+    });
+    DB.update('pedidos', p.id, { status: 'recebido' });
+    CWB.toast('Recebido! Estoque atualizado.'); desenhar(el, u);
+  }));
+}
+CWB.page({ roles: ['oficina'], title: 'Comprar peças', tab: 'home', back: '13-home-oficina.html', render: desenhar });
+</script>
 </body>
 </html>

@@ -2,58 +2,34 @@
 <html lang="pt-br">
 <head>
 <meta charset="UTF-8">
-<title>Curitiba Customs — Comparar orçamentos</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CWB Customs</title>
 <link rel="stylesheet" href="../css/style.css">
 </head>
 <body>
-<div class="device">
-  <div class="screen">
-    <div class="topbar">
-      <a href="03-home-cliente.html" class="back">←</a>
-      <h1>Orçamentos recebidos</h1>
-      <span class="spacer"></span>
-    </div>
-
-    <div class="content-x" style="margin-top: var(--space-4);">
-      <p style="margin-bottom: var(--space-4);">3 oficinas responderam sua solicitação. Compare e escolha a melhor opção.</p>
-
-      <div class="card">
-        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom: var(--space-2);">
-          <div>
-            <strong>Oficina do Bairro</strong>
-            <p style="margin:2px 0 0; font-size:13px;">⭐ 4.8 · Água Verde</p>
-          </div>
-          <span style="color: var(--accent); font-weight:700; font-family: var(--font-display); font-size:18px;">R$ 280</span>
-        </div>
-        <p style="margin: 0 0 var(--space-3); font-size:13px;">Diagnóstico + troca de peça · prazo de 1 dia</p>
-        <a href="06-agendamento.html" class="btn btn-primary" style="padding:10px;">Escolher esta oficina</a>
-      </div>
-
-      <div class="card">
-        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom: var(--space-2);">
-          <div>
-            <strong>Vini Nights Auto</strong>
-            <p style="margin:2px 0 0; font-size:13px;">⭐ 4.9 · Portão</p>
-          </div>
-          <span style="color: var(--accent); font-weight:700; font-family: var(--font-display); font-size:18px;">R$ 310</span>
-        </div>
-        <p style="margin: 0 0 var(--space-3); font-size:13px;">Diagnóstico eletrônico completo · prazo de mesmo dia</p>
-        <a href="06-agendamento.html" class="btn btn-primary" style="padding:10px;">Escolher esta oficina</a>
-      </div>
-
-      <div class="card">
-        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom: var(--space-2);">
-          <div>
-            <strong>Árvore Turma do Bairro</strong>
-            <p style="margin:2px 0 0; font-size:13px;">⭐ 4.6 · Batel</p>
-          </div>
-          <span style="color: var(--accent); font-weight:700; font-family: var(--font-display); font-size:18px;">R$ 265</span>
-        </div>
-        <p style="margin: 0 0 var(--space-3); font-size:13px;">Diagnóstico + peça alternativa · prazo de 2 dias</p>
-        <a href="06-agendamento.html" class="btn btn-primary" style="padding:10px;">Escolher esta oficina</a>
-      </div>
-    </div>
-  </div>
-</div>
+<div id="root"></div>
+<script src="../js/db.js"></script>
+<script src="../js/app.js"></script>
+<script src="../js/fotos.js"></script>
+<script>
+function desenhar(el, u) {
+  DB.load();
+  const orcs = DB.where('orcamentos', (o) => o.clienteId == u.id).sort((a, b) => b.criadoEm - a.criadoEm);
+  el.innerHTML = orcs.length ? orcs.map((o) => {
+    const ps = DB.where('propostas', (p) => p.orcamentoId == o.id).sort((a, b) => a.valor - b.valor);
+    const rapido = ps.length ? Math.min(...ps.map((p) => p.prazo)) : null;
+    return `<div class="card"><div class="row"><strong>${CWB.esc(o.categoria)}</strong>${o.status === 'aberto' ? CWB.badge('Aberto', 'warn') : o.status === 'aceito' ? CWB.badge('Aceito', 'ok') : CWB.badge('Encerrado', 'danger')}</div>
+      <p style="margin:4px 0 0;font-size:13px">${CWB.esc(CWB.veiculoNome(DB.get('veiculos', o.veiculoId)))} — ${CWB.esc(o.descricao)}</p>${Fotos.mostrar(o.fotos)}</div>
+      ${ps.length ? ps.map((p, i) => { const of = DB.get('oficinas', p.oficinaId);
+        return `<div class="card-flat"><div class="row"><strong>${CWB.esc(of.nome)}</strong><span style="font-family:var(--font-display);font-size:20px;color:var(--accent)">${CWB.money(p.valor)}</span></div>
+        <p style="margin:4px 0 8px;font-size:13px">${CWB.esc(p.descricao)} · prazo: ${p.prazo === 0 ? 'mesmo dia' : p.prazo + ' dia(s)'}</p>
+        <div class="row-sm">${i === 0 ? CWB.badge('Menor preço', 'ok') : ''}${p.prazo === rapido ? CWB.badge('Mais rápido', 'accent') : ''}</div>
+        <div class="row-sm" style="margin-top:10px">${o.status === 'aberto' ? `<a class="btn btn-primary btn-sm" href="06-agendamento.html?o=${of.id}&p=${p.id}">Aceitar e agendar</a>` : ''}<a class="btn btn-outline btn-sm" href="05-perfil-oficina.html?id=${of.id}">Ver oficina</a><a class="btn btn-outline btn-sm" href="07-chat.html?o=${of.id}">💬</a></div></div>`; }).join('') : '<div class="empty"><strong>Aguardando propostas</strong><p>As oficinas respondem em breve.</p></div>'}
+      ${o.status === 'aberto' ? `<button class="btn btn-text" data-enc="${o.id}">Encerrar pedido</button>` : ''}`;
+  }).join('<hr style="border:0;border-top:1px solid var(--line);margin:24px 0">') : '<div class="empty"><strong>Nenhum orçamento solicitado</strong></div><a class="btn btn-primary" href="08-orcamento.html">Pedir orçamento</a>';
+  el.querySelectorAll('[data-enc]').forEach((b) => b.addEventListener('click', async () => { if (await CWB.confirmar('Encerrar este pedido de orçamento?', 'Encerrar')) { DB.update('orcamentos', b.dataset.enc, { status: 'encerrado' }); desenhar(el, u); } }));
+}
+CWB.page({ roles: ['cliente'], title: 'Comparar orçamentos', tab: 'home', back: '03-home-cliente.html', render: desenhar, live: desenhar });
+</script>
 </body>
 </html>

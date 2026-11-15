@@ -2,36 +2,80 @@
 <html lang="pt-br">
 <head>
 <meta charset="UTF-8">
-<title>Curitiba Customs — Chat</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CWB Customs — Chat</title>
 <link rel="stylesheet" href="../css/style.css">
-<style>
-  .msg { max-width: 78%; padding: 10px 14px; border-radius: 12px; margin-bottom: 10px; font-size: 14px; line-height:1.4; }
-  .msg-in { background: var(--bg-card); border: 1px solid var(--line); align-self:flex-start; border-bottom-left-radius:2px; }
-  .msg-out { background: var(--accent); color:#17181A; align-self:flex-end; border-bottom-right-radius:2px; margin-left:auto; }
-  .chat-body { flex:1; display:flex; flex-direction:column; padding: var(--space-4); overflow-y:auto; }
-</style>
 </head>
 <body>
-<div class="device">
-  <div class="screen" style="padding-bottom: 0;">
-    <div class="topbar">
-      <a href="05-perfil-oficina.html" class="back">←</a>
-      <h1>Oficina do Bairro</h1>
-      <span class="spacer"></span>
-    </div>
+<div id="root"></div>
+<script src="../js/db.js"></script>
+<script src="../js/app.js"></script>
+<script>
+/* Chat cliente–oficina. Cliente: ?o=<oficinaId>. Oficina: ?c=<clienteId>. Sem parâmetro: lista de conversas. */
+const ehCliente = () => Auth.user() && Auth.user().perfil === 'cliente';
+CWB.page({ roles: ['cliente', 'oficina'], tab: (u) => (u.perfil === 'oficina' ? 'chat' : 'home'),
+  title: (u, q) => {
+    if (u.perfil === 'cliente' && q.o) return DB.get('oficinas', q.o).nome;
+    if (u.perfil === 'oficina' && q.c) return DB.get('usuarios', q.c).nome;
+    return 'Conversas';
+  },
+  back: (u, q) => {
+    if (u.perfil === 'cliente') return q.o ? '05-perfil-oficina.html?id=' + q.o : '03-home-cliente.html';
+    return q.c ? '07-chat.html' : '13-home-oficina.html';
+  },
+  render(el, u, q) {
+    const cid = u.perfil === 'cliente' ? u.id : q.c;
+    const oid = u.perfil === 'cliente' ? q.o : u.oficinaId;
+    if (!(u.perfil === 'cliente' ? q.o : q.c)) { lista(el, u); return; }
+    const de = u.perfil;
+    el.innerHTML = `<div class="chat-wrap"><div class="chat-body" id="msgs" aria-live="polite"></div>
+      <form class="chat-form" id="f"><input id="txt" placeholder="Escreva uma mensagem..." aria-label="Mensagem" autocomplete="off"><button aria-label="Enviar">➤</button></form></div>`;
+    pintar(cid, oid, de);
+    document.getElementById('f').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const t = document.getElementById('txt').value.trim();
+      if (!t) return;
+      DB.insert('mensagens', { clienteId: +cid, oficinaId: +oid, de, texto: t, ts: Date.now() });
+      if (de === 'cliente') DB.notifyOficina(oid, `Nova mensagem de ${u.nome}: "${t.slice(0, 50)}"`, '07-chat.html?c=' + cid, 'chat');
+      else DB.notify(+cid, `${DB.get('oficinas', oid).nome} respondeu no chat.`, '07-chat.html?o=' + oid, 'chat');
+      document.getElementById('txt').value = '';
+      pintar(cid, oid, de);
+    });
+  },
+  live(el, u, q) {
+    const cid = u.perfil === 'cliente' ? u.id : q.c;
+    const oid = u.perfil === 'cliente' ? q.o : u.oficinaId;
+    if ((u.perfil === 'cliente' ? q.o : q.c)) pintar(cid, oid, u.perfil); else lista(el, u);
+  } });
 
-    <div class="chat-body">
-      <div class="msg msg-in">Olá! Recebemos sua solicitação de agendamento. Pode nos enviar fotos do problema?</div>
-      <div class="msg msg-out">Claro, o carro tá fazendo um barulho estranho na roda dianteira</div>
-      <div class="msg msg-in">Entendido. Já reservei um horário amanhã às 09:30 pra diagnóstico. Confirma?</div>
-      <div class="msg msg-out">Perfeito, confirmado 👍</div>
-    </div>
+function pintar(cid, oid, de) {
+  const box = document.getElementById('msgs');
+  if (!box) return;
+  const ms = DB.where('mensagens', (m) => m.clienteId == cid && m.oficinaId == oid).sort((a, b) => a.ts - b.ts);
+  box.innerHTML = ms.length ? ms.map((m) => `<div class="msg ${m.de === de ? 'msg-out' : 'msg-in'}">${CWB.esc(m.texto)}<small>${CWB.fmtTs(m.ts)}</small></div>`).join('')
+    : '<div class="empty"><strong>Nenhuma mensagem ainda</strong><p>Escreva abaixo para começar a conversa.</p></div>';
+  window.scrollTo(0, document.body.scrollHeight);
+}
 
-    <div style="display:flex; gap: var(--space-2); padding: var(--space-3) var(--space-4); border-top: 1px solid var(--line);">
-      <input type="text" placeholder="Escreva uma mensagem..." style="flex:1; background: var(--bg-elevated); border: 1px solid var(--line); border-radius: 20px; padding: 10px 16px; color: var(--text);">
-      <button style="background: var(--accent); color:#17181A; border:none; border-radius:50%; width:40px; height:40px; font-weight:700; cursor:pointer;">➤</button>
-    </div>
-  </div>
-</div>
+function lista(el, u) {
+  let convs;
+  if (u.perfil === 'cliente') {
+    const ids = new Set(DB.where('mensagens', (m) => m.clienteId == u.id).map((m) => m.oficinaId));
+    DB.where('agendamentos', (a) => a.clienteId == u.id).forEach((a) => ids.add(a.oficinaId));
+    convs = [...ids].map((id) => DB.get('oficinas', id)).filter(Boolean).map((o) => ({ href: '07-chat.html?o=' + o.id, nome: o.nome, ult: ultima(u.id, o.id) }));
+  } else {
+    const ids = new Set(DB.where('mensagens', (m) => m.oficinaId == u.oficinaId).map((m) => m.clienteId));
+    DB.where('agendamentos', (a) => a.oficinaId == u.oficinaId).forEach((a) => ids.add(a.clienteId));
+    convs = [...ids].map((id) => DB.get('usuarios', id)).filter(Boolean).map((c) => ({ href: '07-chat.html?c=' + c.id, nome: c.nome, ult: ultima(c.id, u.oficinaId) }));
+  }
+  el.innerHTML = convs.length ? convs.map((c) => `<a href="${c.href}" class="list-item" style="text-decoration:none"><div class="avatar">${CWB.inicial(c.nome)}</div>
+      <div style="flex:1;min-width:0"><strong style="font-size:14px">${CWB.esc(c.nome)}</strong><p style="margin:2px 0 0;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${CWB.esc(c.ult ? c.ult.texto : 'Sem mensagens')}</p></div>
+      <span class="muted">${c.ult ? CWB.fmtTs(c.ult.ts) : ''}</span></a>`).join('')
+    : '<div class="empty"><strong>Nenhuma conversa</strong><p>As conversas aparecem aqui quando houver mensagens.</p></div>';
+}
+function ultima(cid, oid) {
+  return DB.where('mensagens', (m) => m.clienteId == cid && m.oficinaId == oid).sort((a, b) => b.ts - a.ts)[0];
+}
+</script>
 </body>
 </html>

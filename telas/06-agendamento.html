@@ -2,69 +2,70 @@
 <html lang="pt-br">
 <head>
 <meta charset="UTF-8">
-<title>Curitiba Customs — Agendar serviço</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CWB Customs — Agendar serviço</title>
 <link rel="stylesheet" href="../css/style.css">
 </head>
 <body>
-<div class="device">
-  <div class="screen">
-    <div class="topbar">
-      <a href="05-perfil-oficina.html" class="back">←</a>
-      <h1>Agendar serviço</h1>
-      <span class="spacer"></span>
-    </div>
-
-    <div class="content-x" style="margin-top: var(--space-4);">
-      <div class="card-flat" style="margin-bottom: var(--space-4);">
-        <strong>Oficina do Bairro</strong>
-        <p style="margin:2px 0 0; font-size:13px;">Água Verde · 1,2 km</p>
-      </div>
-
-      <form action="09-acompanhamento.html">
-        <div class="field">
-          <label for="carro">Veículo</label>
-          <select id="carro">
-            <option>Honda Civic 2018</option>
-            <option>Fiat Uno 2012</option>
-            <option>+ Adicionar veículo</option>
-          </select>
-        </div>
-
-        <div class="field">
-          <label for="servico">Tipo de serviço</label>
-          <select id="servico">
-            <option>Mecânica geral</option>
-            <option>Elétrica</option>
-            <option>Tuning / performance</option>
-            <option>Estética</option>
-            <option>Lava-car</option>
-          </select>
-        </div>
-
-        <div class="field">
-          <label for="data">Data</label>
-          <input type="date" id="data">
-        </div>
-
-        <div class="field">
-          <label for="hora">Horário</label>
-          <select id="hora">
-            <option>08:00</option>
-            <option>09:30</option>
-            <option>14:00</option>
-            <option>16:30</option>
-          </select>
-        </div>
-
-        <div class="field">
-          <label for="obs">Observações</label>
-          <textarea id="obs" rows="3" placeholder="Descreva o problema ou serviço desejado"></textarea>
-        </div>
-
-        <button type="submit" class="btn btn-primary" style="margin-top: var(--space-2);">Confirmar agendamento</button>
-      </form>
-    </div>
-  </div>
-</div>
+<div id="root"></div>
+<script src="../js/db.js"></script>
+<script src="../js/app.js"></script>
+<script>
+CWB.page({ roles: ['cliente'], title: 'Agendar serviço', tab: 'oficinas',
+  back: (u, q) => q.o ? '05-perfil-oficina.html?id=' + q.o : '03-home-cliente.html',
+  render(el, u, q) {
+    const ofs = DB.where('oficinas', (o) => o.status === 'ativa');
+    const veics = DB.where('veiculos', (v) => v.donoId == u.id);
+    const prop = q.p ? DB.get('propostas', q.p) : null;
+    const ofSel = prop ? prop.oficinaId : (q.o || (ofs[0] && ofs[0].id));
+    const hoje = DB.iso(new Date());
+    const horas = ['08:00', '09:30', '11:00', '14:00', '15:30', '16:30'];
+    if (!veics.length) {
+      el.innerHTML = '<div class="empty"><strong>Cadastre um veículo primeiro</strong><p>Para agendar, informe qual veículo será atendido.</p></div><a class="btn btn-primary" href="22-meus-veiculos.html">Cadastrar veículo</a>';
+      return;
+    }
+    el.innerHTML = `
+      ${prop ? `<div class="card" style="margin-bottom:16px"><strong style="font-size:14px">Proposta aceita</strong><p style="margin:4px 0 0;font-size:13px">${CWB.money(prop.valor)} · ${CWB.esc(prop.descricao)}</p></div>` : ''}
+      <form id="f" novalidate>
+        <div class="field"><label for="of">Oficina</label><select id="of">${ofs.map((o) => `<option value="${o.id}" ${o.id == ofSel ? 'selected' : ''}>${CWB.esc(o.nome)} — ${CWB.esc(o.bairro)}</option>`).join('')}</select></div>
+        <div class="field"><label for="vei">Veículo</label><select id="vei">${veics.map((v) => `<option value="${v.id}">${CWB.esc(CWB.veiculoNome(v))} — ${CWB.esc(v.placa)}</option>`).join('')}</select></div>
+        <div class="field"><label for="srv">Tipo de serviço</label><select id="srv"></select></div>
+        <div class="field"><label for="dt">Data</label><input type="date" id="dt" min="${hoje}" value="${hoje}"><div class="err" id="e_dt"></div></div>
+        <div class="field"><label for="hr">Horário</label><select id="hr"></select><div class="err" id="e_hr"></div></div>
+        <div class="field"><label for="obs">Observações</label><textarea id="obs" rows="3" placeholder="Descreva o problema ou o serviço desejado"></textarea></div>
+        <button class="btn btn-primary" type="submit">Confirmar agendamento</button>
+      </form>`;
+    const $ = (id) => document.getElementById(id);
+    function servs() {
+      const ss = DB.where('servicos', (s) => s.oficinaId == $('of').value);
+      let opts = ss.map((s) => s.nome);
+      if (prop && prop.oficinaId == $('of').value) opts = [prop.descricao].concat(opts);
+      if (!opts.length) opts = ['Serviço a combinar'];
+      $('srv').innerHTML = opts.map((n) => `<option>${CWB.esc(n)}</option>`).join('');
+    }
+    function horarios() {
+      const ocup = DB.where('agendamentos', (a) => a.oficinaId == $('of').value && a.data === $('dt').value && ['solicitado', 'confirmado', 'em_andamento'].includes(a.status)).map((a) => a.hora);
+      $('hr').innerHTML = horas.map((h) => `<option value="${h}" ${ocup.includes(h) ? 'disabled' : ''}>${h}${ocup.includes(h) ? ' (ocupado)' : ''}</option>`).join('');
+      const livre = horas.find((h) => !ocup.includes(h));
+      if (livre) $('hr').value = livre;
+    }
+    servs(); horarios();
+    $('of').addEventListener('change', () => { servs(); horarios(); });
+    $('dt').addEventListener('change', horarios);
+    $('f').addEventListener('submit', (e) => {
+      e.preventDefault(); DB.load();
+      $('e_dt').textContent = ''; $('e_hr').textContent = '';
+      if (!$('dt').value || $('dt').value < hoje) { $('e_dt').textContent = 'Escolha uma data a partir de hoje.'; return; }
+      if (!$('hr').value || $('hr').selectedOptions[0].disabled) { $('e_hr').textContent = 'Sem horário livre neste dia. Escolha outra data.'; return; }
+      const ag = CWB.Svc.criarAgendamento({ clienteId: u.id, oficinaId: +$('of').value, veiculoId: +$('vei').value, servico: $('srv').value, data: $('dt').value, hora: $('hr').value, obs: $('obs').value.trim() });
+      if (prop) {
+        DB.update('agendamentos', ag.id, { valorProposto: prop.valor });
+        DB.update('orcamentos', prop.orcamentoId, { status: 'aceito' });
+      }
+      CWB.toast('Agendamento enviado! Aguarde a confirmação da oficina.');
+      setTimeout(() => { location.href = '09-acompanhamento.html?id=' + ag.id; }, 700);
+    });
+  } });
+</script>
 </body>
 </html>

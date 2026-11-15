@@ -2,58 +2,85 @@
 <html lang="pt-br">
 <head>
 <meta charset="UTF-8">
-<title>Curitiba Customs — Vistoria</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CWB Customs — Vistoria</title>
 <link rel="stylesheet" href="../css/style.css">
 </head>
 <body>
-<div class="device">
-  <div class="screen">
-    <div class="topbar">
-      <a href="09-acompanhamento.html" class="back">←</a>
-      <h1>Laudo de vistoria</h1>
-      <span class="spacer"></span>
-    </div>
+<div id="root"></div>
+<script src="../js/db.js"></script>
+<script src="../js/app.js"></script>
+<script src="../js/fotos.js"></script>
+<script>
+/* Vistoria: Mecânico/Oficina registram (checklist + fotos); Cliente consulta e aprova. */
+const PADRAO = ['Pastilhas de freio', 'Amortecedores', 'Nível de óleo', 'Bateria', 'Pneus', 'Luzes e faróis'];
+const ROT = { ok: 'OK', atencao: 'Atenção', critico: 'Crítico' };
+const COR = { ok: 'ok', atencao: 'warn', critico: 'danger' };
 
-    <div class="content-x" style="margin-top: var(--space-4);">
-      <div class="card-flat" style="margin-bottom: var(--space-4);">
-        <strong>Honda Civic 2018</strong>
-        <p style="margin:2px 0 0; font-size:13px;">Vistoria realizada em 01/09/2026</p>
-      </div>
+CWB.page({ title: (u) => (u.perfil === 'cliente' ? 'Laudo de vistoria' : 'Registro de vistoria'),
+  tab: (u) => ({ cliente: 'servicos', oficina: 'agenda', mecanico: 'home' }[u.perfil]),
+  roles: ['cliente', 'oficina', 'mecanico'],
+  back: (u, q) => ({ cliente: '09-acompanhamento.html?id=' + q.id, oficina: '14-agenda-oficina.html', mecanico: '30-home-mecanico.html' }[u.perfil]),
+  render(el, u, q) {
+    const a = DB.get('agendamentos', q.id);
+    const okAcesso = a && ((u.perfil === 'cliente' && a.clienteId == u.id) || (u.perfil !== 'cliente' && a.oficinaId == u.oficinaId));
+    if (!okAcesso) { el.innerHTML = '<div class="empty"><strong>Serviço não encontrado</strong></div>'; return; }
+    const v = DB.get('veiculos', a.veiculoId);
+    const vist = DB.where('vistorias', (x) => x.agendamentoId == a.id)[0];
+    const topo = `<div class="card-flat"><strong>${CWB.esc(CWB.veiculoNome(v))}</strong><p style="margin:2px 0 0;font-size:13px">${CWB.esc(a.servico)} · ${CWB.fmtData(a.data)}</p></div>`;
 
-      <div style="display:grid; grid-template-columns: 1fr 1fr; gap: var(--space-2); margin-bottom: var(--space-4);">
-        <div style="height:80px; background: var(--bg-elevated); border:1px solid var(--line); border-radius: var(--radius); display:flex; align-items:center; justify-content:center; color: var(--text-muted);">📷</div>
-        <div style="height:80px; background: var(--bg-elevated); border:1px solid var(--line); border-radius: var(--radius); display:flex; align-items:center; justify-content:center; color: var(--text-muted);">📷</div>
-      </div>
+    /* ---- visão do cliente ---- */
+    if (u.perfil === 'cliente') {
+      if (!vist) { el.innerHTML = topo + '<div class="empty"><strong>Vistoria ainda não registrada</strong><p>O mecânico registra o laudo durante o serviço.</p></div>'; return; }
+      el.innerHTML = `${topo}
+        ${Fotos.mostrar(vist.fotos)}
+        <h3 style="margin:16px 0 8px">Itens verificados</h3>
+        ${vist.itens.map((i) => `<div class="list-item"><span style="flex:1">${CWB.esc(i.nome)}</span>${CWB.badge(ROT[i.status], COR[i.status])}</div>`).join('')}
+        <div class="card" style="margin-top:16px"><strong style="font-size:14px">Observação do mecânico</strong><p style="margin:6px 0 0">${CWB.esc(vist.obs || 'Sem observações.')}</p></div>
+        <div id="acoes" style="margin-top:16px">
+          ${vist.aprovada ? '<div class="card-flat">✅ Laudo aprovado por você.</div>' : '<button class="btn btn-outline" id="aprovar">Aprovar laudo</button>'}
+          ${a.status === 'pronto' ? `<a class="btn btn-primary" href="11-pagamento.html?id=${a.id}">Seguir para o pagamento</a>` : ''}
+          ${a.status === 'pago' ? `<a class="btn btn-outline" href="23-recibo.html?id=${a.id}">Ver recibo</a>` : ''}
+        </div>`;
+      const b = document.getElementById('aprovar');
+      if (b) b.addEventListener('click', () => { DB.update('vistorias', vist.id, { aprovada: true }); DB.notifyOficina(a.oficinaId, `${u.nome} aprovou o laudo de vistoria (${CWB.veiculoNome(v)}).`, '14-agenda-oficina.html', 'vistoria'); CWB.toast('Laudo aprovado.'); setTimeout(() => location.reload(), 500); });
+      return;
+    }
 
-      <h3 style="margin-bottom: var(--space-3);">Itens verificados</h3>
-
-      <div class="list-item">
-        <span style="flex:1;">Pastilhas de freio</span>
-        <span class="badge badge-ok">OK</span>
-      </div>
-      <div class="list-item">
-        <span style="flex:1;">Amortecedores</span>
-        <span class="badge badge-warn">Atenção</span>
-      </div>
-      <div class="list-item">
-        <span style="flex:1;">Nível de óleo</span>
-        <span class="badge badge-ok">OK</span>
-      </div>
-      <div class="list-item">
-        <span style="flex:1;">Bateria</span>
-        <span class="badge badge-ok">OK</span>
-      </div>
-
-      <div class="card" style="margin-top: var(--space-4);">
-        <strong style="font-size:14px;">Observação do mecânico</strong>
-        <p style="margin-top:6px;">Amortecedor dianteiro direito com sinal de desgaste. Recomendada troca nos próximos 5.000 km.</p>
-      </div>
-    </div>
-
-    <div class="content-x" style="margin-top: var(--space-4);">
-      <a href="11-pagamento.html" class="btn btn-primary">Aprovar e seguir para pagamento</a>
-    </div>
-  </div>
-</div>
+    /* ---- visão da oficina / mecânico: formulário ---- */
+    let itens = vist ? vist.itens.map((i) => Object.assign({}, i)) : PADRAO.map((n) => ({ nome: n, status: 'ok' }));
+    const fotosCampo = { ref: null };
+    function desenha() {
+      el.innerHTML = topo + `
+        <h3 style="margin:16px 0 8px">Checklist</h3>
+        <div id="itens">${itens.map((i, idx) => `<div class="field"><label>${CWB.esc(i.nome)}</label><div class="seg" data-i="${idx}">
+          ${['ok', 'atencao', 'critico'].map((s) => `<button type="button" data-s="${s}" class="${i.status === s ? 'sel-' + s : ''}" aria-pressed="${i.status === s}">${ROT[s]}</button>`).join('')}</div></div>`).join('')}</div>
+        <div class="field"><label for="novo">Adicionar item ao checklist</label><div class="row-sm"><input id="novo" placeholder="Ex: Correia dentada" style="flex:1"><button type="button" class="btn btn-outline btn-sm" id="addi">Adicionar</button></div></div>
+        <div class="field"><label for="obs">Observações do mecânico</label><textarea id="obs" rows="3" placeholder="Descreva o que foi encontrado">${CWB.esc(vist ? vist.obs : '')}</textarea></div>
+        <div class="field"><label>Fotos (até 4)</label><div id="fotos"></div></div>
+        <button class="btn btn-primary" id="salvar">Salvar vistoria</button>`;
+      fotosCampo.ref = Fotos.campo(document.getElementById('fotos'), 4, vist ? vist.fotos : (fotosCampo.cache || []), (l) => { fotosCampo.cache = l; });
+      el.querySelectorAll('.seg').forEach((seg) => seg.addEventListener('click', (e) => {
+        const b = e.target.closest('button'); if (!b) return;
+        itens[+seg.dataset.i].status = b.dataset.s;
+        seg.querySelectorAll('button').forEach((x) => { x.className = x.dataset.s === b.dataset.s ? 'sel-' + x.dataset.s : ''; x.setAttribute('aria-pressed', x.dataset.s === b.dataset.s); });
+      }));
+      document.getElementById('addi').addEventListener('click', () => {
+        const n = document.getElementById('novo').value.trim();
+        if (!n) return;
+        const obs = document.getElementById('obs').value; const fotos = fotosCampo.ref.lista();
+        itens.push({ nome: n, status: 'ok' }); fotosCampo.cache = fotos; desenha(); document.getElementById('obs').value = obs;
+      });
+      document.getElementById('salvar').addEventListener('click', () => {
+        const dados = { agendamentoId: a.id, itens, obs: document.getElementById('obs').value.trim(), fotos: fotosCampo.ref.lista(), aprovada: false, criadoEm: Date.now() };
+        if (vist) DB.update('vistorias', vist.id, dados); else DB.insert('vistorias', dados);
+        DB.notify(a.clienteId, `Laudo de vistoria disponível para o seu ${CWB.veiculoNome(v)}.`, '10-vistoria.html?id=' + a.id, 'vistoria');
+        CWB.toast('Vistoria salva e enviada ao cliente.');
+        setTimeout(() => { location.href = u.perfil === 'mecanico' ? '30-home-mecanico.html' : '14-agenda-oficina.html'; }, 700);
+      });
+    }
+    desenha();
+  } });
+</script>
 </body>
 </html>

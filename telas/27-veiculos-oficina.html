@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CWB Customs</title>
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+<div id="root"></div>
+<script src="../js/db.js"></script>
+<script src="../js/app.js"></script>
+<script>
+CWB.page({ roles: ['oficina'], title: 'Veículos atendidos', tab: 'home', back: '13-home-oficina.html', render(el, u) {
+  DB.load();
+  const ids = [...new Set(DB.where('agendamentos', (a) => a.oficinaId == u.oficinaId).map((a) => a.veiculoId))];
+  const vs = ids.map((i) => DB.get('veiculos', i)).filter(Boolean);
+  el.innerHTML = `<h3 style="margin-bottom:8px">Veículos de clientes da plataforma</h3>
+    ${vs.length ? vs.map((v) => { const dono = DB.get('usuarios', v.donoId); const n = DB.where('agendamentos', (a) => a.veiculoId == v.id && a.oficinaId == u.oficinaId).length;
+      return `<div class="list-item"><div style="flex:1"><strong style="font-size:14px">${CWB.esc(CWB.veiculoNome(v))} · ${CWB.esc(v.placa)}</strong><p style="margin:2px 0 0;font-size:13px">${CWB.esc(dono ? dono.nome : '—')} · ${n} atendimento(s)</p></div></div>`; }).join('') : '<div class="empty"><strong>Nenhum atendimento ainda</strong></div>'}
+    <h3 style="margin:24px 0 8px">Veículos de balcão</h3><div id="balcao"></div>`;
+  CWB.crud(document.getElementById('balcao'), {
+    table: 'veiculos', where: (v) => v.oficinaId == u.oficinaId, addTitle: 'Novo veículo de balcão', empty: 'Nenhum veículo de balcão.',
+    intro: 'Clientes sem cadastro na plataforma, atendidos direto na oficina.',
+    item: (v) => ({ title: `${v.modelo} ${v.ano} · ${v.placa}`, sub: `${v.proprietario} · ${v.cor}` }),
+    fields: [
+      { key: 'proprietario', label: 'Proprietário', required: true },
+      { key: 'modelo', label: 'Marca e modelo', required: true },
+      { key: 'ano', label: 'Ano', type: 'number', required: true, min: 1950 },
+      { key: 'placa', label: 'Placa', required: true, pattern: /^[A-Za-z]{3}-?\d[A-Za-z0-9]\d{2}$/, patternMsg: 'Placa inválida (ex: ABC-1D23).' },
+      { key: 'cor', label: 'Cor', required: true },
+    ],
+    defaults: () => ({ oficinaId: u.oficinaId }),
+    validate: (d) => (!Number.isInteger(d.ano) || d.ano < 1950 || d.ano > new Date().getFullYear() + 1 ? 'Ano inválido.' : (d.placa = d.placa.toUpperCase().replace(/^([A-Z]{3})(?!-)/, '$1-'), null)),
+    canDelete: (v) => (DB.where('agendamentos', (a) => a.veiculoId == v.id)[0] ? 'Veículo com serviços vinculados.' : null),
+  });
+} });
+</script>
+</body>
+</html>

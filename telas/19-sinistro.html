@@ -2,56 +2,57 @@
 <html lang="pt-br">
 <head>
 <meta charset="UTF-8">
-<title>Curitiba Customs — Abrir sinistro</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CWB Customs</title>
 <link rel="stylesheet" href="../css/style.css">
 </head>
 <body>
-<div class="device">
-  <div class="screen">
-    <div class="topbar">
-      <a href="03-home-cliente.html" class="back">←</a>
-      <h1>Abrir sinistro</h1>
-      <span class="spacer"></span>
-    </div>
-
-    <div class="content-x" style="margin-top: var(--space-4);">
-      <p style="margin-bottom: var(--space-4);">Encaminhe o caso direto para o corretor do seu seguro, com o laudo da oficina já anexado.</p>
-
-      <form action="03-home-cliente.html">
-        <div class="field">
-          <label for="segur">Seguradora</label>
-          <select id="segur">
-            <option>Porto Seguro</option>
-            <option>SulAmérica</option>
-            <option>Azul Seguros</option>
-            <option>Outra</option>
-          </select>
-        </div>
-
-        <div class="field">
-          <label for="apolice">Número da apólice</label>
-          <input type="text" id="apolice" placeholder="Ex: 00123456">
-        </div>
-
-        <div class="field">
-          <label for="tipo">Tipo de ocorrência</label>
-          <select id="tipo">
-            <option>Colisão</option>
-            <option>Furto/roubo</option>
-            <option>Dano por terceiro</option>
-            <option>Avaria elétrica</option>
-          </select>
-        </div>
-
-        <div class="card-flat">
-          <strong style="font-size:14px;">Laudo anexado</strong>
-          <p style="margin:4px 0 0; font-size:13px;">📄 Vistoria — Oficina do Bairro, 01/09/2026</p>
-        </div>
-
-        <button type="submit" class="btn btn-primary" style="margin-top: var(--space-3);">Enviar para o corretor</button>
-      </form>
-    </div>
-  </div>
-</div>
+<div id="root"></div>
+<script src="../js/db.js"></script>
+<script src="../js/app.js"></script>
+<script src="../js/fotos.js"></script>
+<script>
+CWB.page({ roles: ['cliente'], title: 'Abrir sinistro', tab: 'perfil', back: '20-perfil.html', render(el, u) {
+  let campo;
+  function desenhar() {
+    DB.load();
+    const vs = DB.where('veiculos', (v) => v.donoId == u.id);
+    const lista = DB.where('sinistros', (s) => s.clienteId == u.id).sort((a, b) => b.criadoEm - a.criadoEm);
+    el.innerHTML = `
+      <p>Encaminhe o caso para a sua seguradora com o laudo da oficina anexado.</p>
+      ${vs.length ? `<form id="f" novalidate>
+        <div class="field"><label for="v">Veículo</label><select id="v">${vs.map((v) => `<option value="${v.id}">${CWB.esc(CWB.veiculoNome(v))} · ${CWB.esc(v.placa)}</option>`).join('')}</select></div>
+        <div class="field"><label for="seg">Seguradora</label><select id="seg"><option>Porto Seguro</option><option>SulAmérica</option><option>Azul Seguros</option><option>Outra</option></select></div>
+        <div class="field"><label for="ap">Número da apólice</label><input id="ap" inputmode="numeric" placeholder="Somente números"><div class="err" id="e_ap"></div></div>
+        <div class="field"><label for="dt">Data da ocorrência</label><input id="dt" type="date" max="${DB.iso(new Date())}"><div class="err" id="e_dt"></div></div>
+        <div class="field"><label for="ds">O que aconteceu?</label><textarea id="ds" rows="4" placeholder="Descreva a ocorrência"></textarea><div class="err" id="e_ds"></div></div>
+        <div class="field"><label>Fotos dos danos (até 4)</label><div id="fotos"></div></div>
+        <button class="btn btn-primary" type="submit">Enviar sinistro</button></form>`
+        : '<div class="empty"><strong>Cadastre um veículo primeiro</strong></div><a class="btn btn-primary" href="22-meus-veiculos.html">Meus veículos</a>'}
+      <h3 style="margin:24px 0 8px">Meus sinistros</h3>
+      ${lista.length ? lista.map((s) => `<div class="card-flat"><div class="row"><strong>${CWB.esc(s.seguradora)} · apólice ${CWB.esc(s.apolice)}</strong>${CWB.badge({ aberto: 'Em análise', encaminhado: 'Encaminhado', cancelado: 'Cancelado' }[s.status], { aberto: 'warn', encaminhado: 'ok', cancelado: 'danger' }[s.status])}</div>
+        <p style="margin:4px 0 0;font-size:13px">${CWB.esc(CWB.veiculoNome(DB.get('veiculos', s.veiculoId)))} · ${CWB.fmtData(s.data)}</p><p class="muted" style="margin:4px 0 0">${CWB.esc(s.descricao)}</p>${Fotos.mostrar(s.fotos)}
+        ${s.status === 'aberto' ? `<button class="btn btn-danger btn-sm" data-c="${s.id}" style="margin-top:10px">Cancelar sinistro</button>` : ''}</div>`).join('') : '<div class="empty"><strong>Nenhum sinistro aberto</strong></div>'}`;
+    if (vs.length) {
+      campo = Fotos.campo(document.getElementById('fotos'), 4, []);
+      document.getElementById('f').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const ap = document.getElementById('ap').value.trim(), dt = document.getElementById('dt').value, ds = document.getElementById('ds').value.trim();
+        let ok = true;
+        const er = (id, m) => { document.getElementById(id).textContent = m; if (m) ok = false; };
+        er('e_ap', /^\d{5,}$/.test(ap) ? '' : 'Informe a apólice (mínimo 5 números).');
+        er('e_dt', dt ? '' : 'Informe a data.');
+        er('e_ds', ds.length >= 10 ? '' : 'Descreva com pelo menos 10 caracteres.');
+        if (!ok) return;
+        DB.insert('sinistros', { clienteId: u.id, veiculoId: +document.getElementById('v').value, seguradora: document.getElementById('seg').value, apolice: ap, data: dt, descricao: ds, fotos: campo.lista(), status: 'aberto', criadoEm: Date.now() });
+        DB.notifyPerfil('agente', `Novo sinistro aberto por ${u.nome}.`, '31-gestao-oficinas.html', 'sinistro');
+        CWB.toast('Sinistro enviado à seguradora.'); desenhar();
+      });
+    }
+    el.querySelectorAll('[data-c]').forEach((b) => b.addEventListener('click', async () => { if (await CWB.confirmar('Cancelar este sinistro?', 'Cancelar sinistro')) { DB.update('sinistros', b.dataset.c, { status: 'cancelado' }); CWB.toast('Sinistro cancelado.'); desenhar(); } }));
+  }
+  desenhar();
+} });
+</script>
 </body>
 </html>

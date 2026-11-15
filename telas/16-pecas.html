@@ -2,68 +2,29 @@
 <html lang="pt-br">
 <head>
 <meta charset="UTF-8">
-<title>Curitiba Customs — Peças</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CWB Customs</title>
 <link rel="stylesheet" href="../css/style.css">
 </head>
 <body>
-<div class="device">
-  <div class="screen">
-    <div class="topbar">
-      <a href="13-home-oficina.html" class="back">←</a>
-      <h1>Estoque de peças</h1>
-      <span class="spacer"></span>
-    </div>
-
-    <div class="content-x" style="margin-top: var(--space-4);">
-      <div class="list-item">
-        <div style="flex:1;">
-          <strong style="font-size:14px;">Filtro de óleo</strong>
-          <p style="margin:2px 0 0; font-size:13px;">Cód. FO-2201 · R$ 35,00</p>
-        </div>
-        <span class="badge badge-ok">18 un.</span>
-      </div>
-      <div class="list-item">
-        <div style="flex:1;">
-          <strong style="font-size:14px;">Pastilha de freio</strong>
-          <p style="margin:2px 0 0; font-size:13px;">Cód. PF-1187 · R$ 89,00</p>
-        </div>
-        <span class="badge badge-warn">4 un.</span>
-      </div>
-      <div class="list-item">
-        <div style="flex:1;">
-          <strong style="font-size:14px;">Amortecedor dianteiro</strong>
-          <p style="margin:2px 0 0; font-size:13px;">Cód. AD-3390 · R$ 210,00</p>
-        </div>
-        <span class="badge badge-ok">7 un.</span>
-      </div>
-      <div class="list-item">
-        <div style="flex:1;">
-          <strong style="font-size:14px;">Vela de ignição</strong>
-          <p style="margin:2px 0 0; font-size:13px;">Cód. VI-0552 · R$ 22,00</p>
-        </div>
-        <span class="badge badge-warn">2 un.</span>
-      </div>
-
-      <div class="card" style="margin-top: var(--space-5);">
-        <h3 style="margin-bottom: var(--space-3); color: var(--text);">Adicionar peça</h3>
-        <div class="field">
-          <label for="nomep">Nome da peça</label>
-          <input type="text" id="nomep" placeholder="Ex: Filtro de ar">
-        </div>
-        <div class="field">
-          <label for="qtd">Quantidade em estoque</label>
-          <input type="number" id="qtd" placeholder="0">
-        </div>
-        <div class="field">
-          <label for="preco">Preço unitário</label>
-          <input type="text" id="preco" placeholder="R$ 0,00">
-        </div>
-        <button class="btn btn-primary">Salvar</button>
-      </div>
-
-      <a href="18-compra-pecas.html" class="btn btn-outline" style="margin-top: var(--space-3);">Comprar peças de fornecedores</a>
-    </div>
-  </div>
-</div>
+<div id="root"></div>
+<script src="../js/db.js"></script>
+<script src="../js/app.js"></script>
+<script>
+CWB.page({ roles: ['oficina'], title: 'Estoque de peças', tab: 'home', back: '13-home-oficina.html', render(el, u) {
+  CWB.crud(el, {
+    table: 'pecas', where: (p) => p.oficinaId == u.oficinaId, addTitle: 'Nova peça', empty: 'Estoque vazio.',
+    item: (p) => ({ title: p.nome, sub: `${p.codigo} · ${CWB.money(p.preco)} · ${p.qtd} un.`, badge: p.qtd <= 3 ? CWB.badge('Estoque baixo', 'danger') : '' }),
+    fields: [
+      { key: 'nome', label: 'Nome da peça', required: true },
+      { key: 'codigo', label: 'Código', required: true, placeholder: 'Ex: FO-2201' },
+      { key: 'qtd', label: 'Quantidade em estoque', type: 'number', required: true, min: 0 },
+      { key: 'preco', label: 'Preço de venda (R$)', type: 'money', required: true },
+    ],
+    defaults: () => ({ oficinaId: u.oficinaId }),
+    validate: (d, id) => (Number.isInteger(d.qtd) ? null : 'A quantidade deve ser um número inteiro.'),
+  });
+} });
+</script>
 </body>
 </html>

@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CWB Customs — Recibo</title>
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+<div id="root"></div>
+<script src="../js/db.js"></script>
+<script src="../js/app.js"></script>
+<script>
+/* Emissão de recibo: cliente (dono do serviço) ou oficina (que recebeu). */
+CWB.page({ roles: ['cliente', 'oficina'], title: 'Recibo', tab: (u) => (u.perfil === 'cliente' ? 'servicos' : 'agenda'),
+  back: (u, q) => (u.perfil === 'cliente' ? '09-acompanhamento.html?id=' + q.id : '14-agenda-oficina.html'),
+  render(el, u, q) {
+    const a = DB.get('agendamentos', q.id);
+    const ok = a && (u.perfil === 'cliente' ? a.clienteId == u.id : a.oficinaId == u.oficinaId);
+    const pg = ok && DB.where('pagamentos', (x) => x.agendamentoId == a.id)[0];
+    if (!pg) { el.innerHTML = '<div class="empty"><strong>Recibo indisponível</strong><p>O recibo é emitido após a confirmação do pagamento.</p></div>'; return; }
+    const of = DB.get('oficinas', a.oficinaId), cli = DB.get('usuarios', a.clienteId), v = DB.get('veiculos', a.veiculoId);
+    const av = DB.where('avaliacoes', (x) => x.agendamentoId == a.id)[0];
+    el.innerHTML = `
+      <div class="no-print" style="text-align:center;margin-bottom:16px">
+        <div style="width:56px;height:56px;border-radius:50%;background:rgba(74,122,92,.2);color:var(--ok);display:flex;align-items:center;justify-content:center;font-size:26px;margin:0 auto 12px">✓</div>
+        <h2>Pagamento confirmado</h2></div>
+      <div class="receipt">
+        <h2 style="color:#1A1A1A;margin-bottom:2px">Recibo ${CWB.esc(pg.recibo)}</h2><p style="margin:0">CWB Customs · ${CWB.fmtData(pg.data)}</p><hr>
+        <div class="row"><span>Oficina</span><strong>${CWB.esc(of.nome)}</strong></div>
+        <div class="row"><span>CNPJ</span><strong>${CWB.esc(of.cnpj)}</strong></div>
+        <div class="row"><span>Cliente</span><strong>${CWB.esc(cli.nome)}</strong></div>
+        <div class="row"><span>Veículo</span><strong>${CWB.esc(CWB.veiculoNome(v))} · ${CWB.esc(v.placa)}</strong></div>
+        <div class="row"><span>Serviço</span><strong>${CWB.esc(a.servico)}</strong></div>
+        <div class="row"><span>Forma de pagamento</span><strong>${CWB.esc(pg.forma)}</strong></div><hr>
+        <div class="row" style="font-size:18px"><span>Total pago</span><strong>${CWB.money(pg.total)}</strong></div>
+      </div>
+      <div class="no-print" style="margin-top:16px">
+        <button class="btn btn-outline" id="imp">🖨 Imprimir / salvar PDF</button>
+        ${u.perfil === 'cliente' && !av ? `<a class="btn btn-primary" href="12-avaliacao.html?id=${a.id}">Avaliar atendimento</a>` : ''}
+      </div>`;
+    document.getElementById('imp').addEventListener('click', () => window.print());
+  } });
+</script>
+</body>
+</html>

@@ -2,50 +2,55 @@
 <html lang="pt-br">
 <head>
 <meta charset="UTF-8">
-<title>Curitiba Customs — Pagamento</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CWB Customs — Pagamento</title>
 <link rel="stylesheet" href="../css/style.css">
 </head>
 <body>
-<div class="device">
-  <div class="screen">
-    <div class="topbar">
-      <a href="10-vistoria.html" class="back">←</a>
-      <h1>Pagamento</h1>
-      <span class="spacer"></span>
-    </div>
-
-    <div class="content-x" style="margin-top: var(--space-4);">
-      <h3 style="margin-bottom: var(--space-3);">Resumo do serviço</h3>
-
+<div id="root"></div>
+<script src="../js/db.js"></script>
+<script src="../js/app.js"></script>
+<script>
+CWB.page({ roles: ['cliente'], title: 'Pagamento', tab: 'servicos', back: (u, q) => '09-acompanhamento.html?id=' + q.id,
+  render(el, u, q) {
+    const a = DB.get('agendamentos', q.id);
+    if (!a || a.clienteId != u.id) { el.innerHTML = '<div class="empty"><strong>Serviço não encontrado</strong></div>'; return; }
+    if (a.status === 'pago') { location.replace('23-recibo.html?id=' + a.id); return; }
+    if (a.status !== 'pronto') {
+      el.innerHTML = `<div class="empty"><strong>Pagamento indisponível</strong><p>O pagamento é liberado quando a oficina marca o serviço como pronto.</p></div><a class="btn btn-outline" href="09-acompanhamento.html?id=${a.id}">Voltar ao acompanhamento</a>`;
+      return;
+    }
+    const of = DB.get('oficinas', a.oficinaId);
+    el.innerHTML = `
+      <h3 style="margin-bottom:12px">Resumo do serviço</h3>
       <div class="card-flat">
-        <div style="display:flex; justify-content:space-between; margin-bottom: var(--space-2); font-size:14px;">
-          <span>Troca de óleo</span><span>R$ 120,00</span>
-        </div>
-        <div style="display:flex; justify-content:space-between; margin-bottom: var(--space-2); font-size:14px;">
-          <span>Revisão elétrica</span><span>R$ 180,00</span>
-        </div>
-        <div style="display:flex; justify-content:space-between; margin-bottom: var(--space-2); font-size:14px;">
-          <span>Mão de obra</span><span>R$ 90,00</span>
-        </div>
-        <div style="border-top:1px solid var(--line); margin-top: var(--space-2); padding-top: var(--space-2); display:flex; justify-content:space-between; font-weight:700;">
-          <span>Total</span><span style="color: var(--accent);">R$ 390,00</span>
-        </div>
+        <div class="row" style="margin-bottom:8px;font-size:14px"><span>${CWB.esc(a.servico)}</span><span>${CWB.money(a.valor)}</span></div>
+        <p class="muted" style="margin:0">${CWB.esc(of.nome)} · ${CWB.esc(CWB.veiculoNome(DB.get('veiculos', a.veiculoId)))}</p>
+        <div class="row" style="border-top:1px solid var(--line);margin-top:12px;padding-top:12px;font-weight:700"><span>Total</span><span style="color:var(--accent)">${CWB.money(a.valor)}</span></div>
       </div>
-
-      <h3 style="margin: var(--space-4) 0 var(--space-3);">Forma de pagamento</h3>
-
-      <div class="field">
-        <select>
-          <option>Pix</option>
-          <option>Cartão de crédito</option>
-          <option>Cartão de débito</option>
-          <option>Dinheiro na retirada</option>
-        </select>
-      </div>
-
-      <a href="23-comprovante-pagamento.html" class="btn btn-primary" style="margin-top: var(--space-2);">Confirmar pagamento</a>
-    </div>
-  </div>
-</div>
+      <h3 style="margin:24px 0 12px">Forma de pagamento</h3>
+      <div class="field"><label for="forma" class="muted">Escolha como pagar</label><select id="forma"><option>Pix</option><option>Cartão de crédito</option><option>Cartão de débito</option><option>Dinheiro na retirada</option></select></div>
+      <div id="extra"></div>
+      <button class="btn btn-primary" id="pagar" style="margin-top:8px">Confirmar pagamento</button>
+      <p class="muted" style="margin-top:12px">Simulação: nenhuma cobrança real é feita.</p>`;
+    const forma = document.getElementById('forma');
+    function extra() {
+      const f = forma.value;
+      document.getElementById('extra').innerHTML = f === 'Pix'
+        ? `<div class="card-flat"><strong style="font-size:14px">Pix copia e cola</strong><p style="margin:6px 0 0;font-size:12px;word-break:break-all">00020126580014BR.GOV.BCB.PIX0136cwb-customs-${a.id}520400005303986540${String(a.valor).length}${a.valor}5802BR</p></div>`
+        : f.startsWith('Cartão') ? '<div class="field"><label for="num">Número do cartão</label><input id="num" inputmode="numeric" placeholder="0000 0000 0000 0000" maxlength="19"><div class="err" id="e_num"></div></div>' : '<div class="card-flat"><p style="margin:0">Pague diretamente na oficina no momento da retirada.</p></div>';
+    }
+    forma.addEventListener('change', extra); extra();
+    document.getElementById('pagar').addEventListener('click', () => {
+      if (forma.value.startsWith('Cartão')) {
+        const n = document.getElementById('num').value.replace(/\D/g, '');
+        if (n.length < 13) { document.getElementById('e_num').textContent = 'Informe o número do cartão.'; return; }
+      }
+      CWB.Svc.pagar(a.id, forma.value);
+      CWB.toast('Pagamento confirmado!');
+      setTimeout(() => { location.href = '23-recibo.html?id=' + a.id; }, 600);
+    });
+  } });
+</script>
 </body>
 </html>

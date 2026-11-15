@@ -2,33 +2,41 @@
 <html lang="pt-br">
 <head>
 <meta charset="UTF-8">
-<title>Curitiba Customs — Avaliação</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CWB Customs — Avaliação</title>
 <link rel="stylesheet" href="../css/style.css">
 </head>
 <body>
-<div class="device">
-  <div class="screen" style="justify-content:center;">
-    <div class="content-x" style="text-align:center;">
-      <div style="font-size:40px; margin-bottom: var(--space-3);">🔧</div>
-      <h2>Serviço concluído!</h2>
-      <p style="margin-bottom: var(--space-5);">Como foi sua experiência com a Oficina do Bairro?</p>
-
-      <div style="font-size:34px; letter-spacing:8px; margin-bottom: var(--space-5);">
-        ⭐⭐⭐⭐⭐
-      </div>
-
-      <form action="03-home-cliente.html">
-        <div class="field" style="text-align:left;">
-          <label for="coment">Comentário (opcional)</label>
-          <textarea id="coment" rows="4" placeholder="Conte como foi o atendimento..."></textarea>
-        </div>
-
-        <button type="submit" class="btn btn-primary">Enviar avaliação</button>
-      </form>
-
-      <a href="03-home-cliente.html" class="btn btn-text" style="display:block; margin-top: var(--space-2);">Pular</a>
-    </div>
-  </div>
-</div>
+<div id="root"></div>
+<script src="../js/db.js"></script>
+<script src="../js/app.js"></script>
+<script>
+CWB.page({ roles: ['cliente'], title: 'Avaliar atendimento', tab: 'servicos', back: (u, q) => '09-acompanhamento.html?id=' + q.id,
+  render(el, u, q) {
+    const a = DB.get('agendamentos', q.id);
+    if (!a || a.clienteId != u.id || a.status !== 'pago') { el.innerHTML = '<div class="empty"><strong>Avaliação indisponível</strong><p>Só é possível avaliar serviços já pagos.</p></div><a class="btn btn-outline" href="09-acompanhamento.html">Voltar</a>'; return; }
+    if (DB.where('avaliacoes', (x) => x.agendamentoId == a.id)[0]) { el.innerHTML = '<div class="empty"><strong>Você já avaliou este serviço</strong><p>Obrigado pelo feedback!</p></div><a class="btn btn-outline" href="24-historico-servicos.html">Ver histórico</a>'; return; }
+    const of = DB.get('oficinas', a.oficinaId);
+    let nota = 0;
+    el.innerHTML = `
+      <div style="text-align:center"><div style="font-size:40px">🔧</div><h2>Serviço concluído!</h2>
+      <p>Como foi sua experiência com a ${CWB.esc(of.nome)}?</p></div>
+      <div class="stars-in" role="radiogroup" aria-label="Nota de 1 a 5">${[1, 2, 3, 4, 5].map((n) => `<button type="button" data-n="${n}" role="radio" aria-checked="false" aria-label="${n} estrela${n > 1 ? 's' : ''}">⭐</button>`).join('')}</div>
+      <div class="err" id="e_nota" style="text-align:center"></div>
+      <form id="f"><div class="field"><label for="com">Comentário (opcional)</label><textarea id="com" rows="4" placeholder="Conte como foi o atendimento..."></textarea></div>
+      <button class="btn btn-primary" type="submit">Enviar avaliação</button></form>
+      <a href="03-home-cliente.html" class="btn btn-text" style="display:block;margin-top:8px">Pular</a>`;
+    const bs = el.querySelectorAll('.stars-in button');
+    bs.forEach((b) => b.addEventListener('click', () => { nota = +b.dataset.n; bs.forEach((x) => { const on = +x.dataset.n <= nota; x.classList.toggle('on', on); x.setAttribute('aria-checked', +x.dataset.n === nota); }); document.getElementById('e_nota').textContent = ''; }));
+    document.getElementById('f').addEventListener('submit', (e) => {
+      e.preventDefault();
+      if (!nota) { document.getElementById('e_nota').textContent = 'Escolha uma nota de 1 a 5 estrelas.'; return; }
+      DB.insert('avaliacoes', { oficinaId: a.oficinaId, agendamentoId: a.id, autor: u.nome.split(' ')[0] + ' ' + (u.nome.split(' ')[1] || '')[0] + '.', nota, comentario: document.getElementById('com').value.trim(), criadoEm: Date.now() });
+      DB.notifyOficina(a.oficinaId, `${u.nome} avaliou seu atendimento com ${nota} estrela(s).`, '28-relatorios.html', 'avaliacao');
+      CWB.toast('Avaliação enviada. Obrigado!');
+      setTimeout(() => { location.href = '24-historico-servicos.html'; }, 700);
+    });
+  } });
+</script>
 </body>
 </html>
